@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Ludo MPI · Online Multiplayer</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --red:#e53935; --blue:#1e88e5; --green:#43a047; --yellow:#fdd835;
+    --red-light:#ffcdd2; --blue-light:#bbdefb; --green-light:#c8e6c9; --yellow-light:#fff9c4;
+    --bg:#1a1a2e; --surface:#16213e; --card:#0f3460; --accent:#e94560;
+    --text:#eaeaea; --muted:#7a8ba0;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text);
+    min-height:100vh; overflow-x:hidden;
+    background-image: radial-gradient(ellipse at 20% 50%, #0f346022 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 20%, #e9456011 0%, transparent 60%);
+  }
+
+  /* ── LOBBY ── */
+  #lobby {
+    min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:24px; gap:20px;
+  }
+  .logo { text-align:center; }
+  .logo h1 { font-family:'Fredoka One',cursive; font-size:52px; letter-spacing:2px;
+    background:linear-gradient(135deg,#fdd835,#e94560,#1e88e5);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1; }
+  .logo p { color:var(--muted); font-size:13px; letter-spacing:3px; margin-top:6px; text-transform:uppercase; }
+
+  .card {
+    background:var(--card); border-radius:20px; padding:28px 24px;
+    width:100%; max-width:360px; box-shadow:0 8px 32px #00000044;
+    border:1px solid #ffffff10;
+  }
+  .card h2 { font-family:'Fredoka One',cursive; font-size:22px; margin-bottom:18px; color:#fff; }
+
+  input[type=text] {
+    width:100%; padding:12px 16px; border-radius:12px; border:2px solid #ffffff18;
+    background:#ffffff0d; color:#fff; font-family:'Nunito',sans-serif; font-size:15px;
+    outline:none; transition:border 0.2s; margin-bottom:12px;
+  }
+  input[type=text]:focus { border-color:var(--accent); }
+  input[type=text]::placeholder { color:var(--muted); }
+
+  .btn {
+    width:100%; padding:13px; border-radius:12px; border:none; cursor:pointer;
+    font-family:'Fredoka One',cursive; font-size:17px; letter-spacing:1px;
+    transition:transform 0.1s, box-shadow 0.2s; touch-action:manipulation;
+  }
+  .btn:active { transform:scale(0.97); }
+  .btn-primary { background:linear-gradient(135deg,#e94560,#c62828); color:#fff;
+    box-shadow:0 4px 20px #e9456044; }
+  .btn-secondary { background:linear-gradient(135deg,#1e88e5,#0d47a1); color:#fff;
+    box-shadow:0 4px 20px #1e88e544; margin-top:8px; }
+  .btn-green { background:linear-gradient(135deg,#43a047,#1b5e20); color:#fff;
+    box-shadow:0 4px 20px #43a04744; }
+  .btn-outline { background:transparent; border:2px solid #ffffff22; color:var(--muted);
+    font-family:'Nunito',sans-serif; font-weight:700; font-size:14px; }
+
+  .divider { display:flex; align-items:center; gap:10px; margin:14px 0; color:var(--muted); font-size:13px; }
+  .divider::before,.divider::after { content:''; flex:1; height:1px; background:#ffffff15; }
+
+  .room-code-display {
+    background:#ffffff08; border-radius:12px; padding:14px; text-align:center; margin-bottom:16px;
+    border:2px dashed #ffffff20;
+  }
+  .room-code-display .code {
+    font-family:'Fredoka One',cursive; font-size:38px; letter-spacing:8px;
+    color:var(--yellow); text-shadow:0 0 20px #fdd83566;
+  }
+  .room-code-display p { color:var(--muted); font-size:12px; margin-top:4px; }
+
+  .player-slot {
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    background:#ffffff08; border-radius:10px; margin-bottom:8px;
+    border-left:4px solid transparent; transition:all 0.3s;
+  }
+  .player-slot.filled { border-left-color: var(--slot-color); background:#ffffff0d; }
+  .player-slot .dot { width:12px; height:12px; border-radius:50%; background:var(--slot-color); flex-shrink:0; }
+  .player-slot .name { font-weight:700; font-size:14px; flex:1; }
+  .player-slot .badge { font-size:11px; color:var(--muted); background:#ffffff10; padding:2px 8px; border-radius:20px; }
+  .player-slot.you .badge { color:var(--accent); background:#e9456020; }
+
+  .status-text { text-align:center; color:var(--muted); font-size:13px; margin-top:8px; }
+  .pulse { animation: pulse-anim 1.5s ease-in-out infinite; }
+  @keyframes pulse-anim { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .toast {
+    position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-80px);
+    background:var(--card); border-radius:12px; padding:12px 20px; font-size:14px; font-weight:700;
+    box-shadow:0 4px 20px #00000066; z-index:999; transition:transform 0.3s; white-space:nowrap;
+    border:1px solid #ffffff18;
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* ── GAME ── */
+  #game { display:none; flex-direction:column; align-items:center; padding:8px 8px 16px; min-height:100vh; }
+
+  .game-header {
+    width:100%; max-width:480px; display:flex; justify-content:space-between; align-items:center;
+    padding:8px 4px; margin-bottom:6px;
+  }
+  .game-header .room-info { font-size:12px; color:var(--muted); }
+  .game-header .room-info span { color:var(--yellow); font-weight:800; font-family:'Fredoka One',cursive; }
+  .btn-leave { background:transparent; border:1px solid #ffffff20; color:var(--muted);
+    padding:6px 14px; border-radius:8px; cursor:pointer; font-size:12px; font-family:'Nunito',sans-serif; }
+
+  /* ── BOARD ── */
+  .board-wrap { position:relative; width:min(100vw - 16px, 480px); aspect-ratio:1; }
+  canvas#board { width:100%; height:100%; border-radius:16px;
+    box-shadow:0 8px 40px #00000066; display:block; }
+
+  /* ── INFO BAR ── */
+  .info-bar {
+    width:100%; max-width:480px; display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;
+  }
+  .player-info {
+    flex:1; min-width:100px; background:var(--card); border-radius:12px; padding:8px 10px;
+    border-left:4px solid transparent; transition:all 0.3s;
+    border-top: 1px solid #ffffff10;
+  }
+  .player-info.active { box-shadow:0 0 16px var(--pi-color)44; border-left-color:var(--pi-color); background:#ffffff0d; }
+  .player-info .pi-name { font-size:12px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .player-info .pi-score { font-family:'Fredoka One',cursive; font-size:20px; }
+  .player-info .pi-you { font-size:10px; color:var(--accent); }
+
+  /* ── DICE + ACTION ── */
+  .action-area {
+    width:100%; max-width:480px; margin-top:10px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--card); border-radius:16px; padding:12px 16px;
+    border:1px solid #ffffff10;
+  }
+  .turn-label { font-size:13px; color:var(--muted); line-height:1.4; }
+  .turn-label strong { color:#fff; font-size:15px; display:block; }
+
+  .dice-btn {
+    width:64px; height:64px; border-radius:14px; border:none; cursor:pointer;
+    font-size:32px; background:linear-gradient(135deg,#fdd835,#f57f17);
+    box-shadow:0 4px 16px #fdd83566; transition:transform 0.1s, box-shadow 0.2s;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    touch-action:manipulation; position:relative; overflow:hidden;
+  }
+  .dice-btn:disabled { background:linear-gradient(135deg,#333,#222); box-shadow:none; cursor:default; opacity:0.5; }
+  .dice-btn:not(:disabled):active { transform:scale(0.92) rotate(-10deg); }
+  .dice-btn.rolling { animation: dice-roll 0.5s ease-in-out; }
+  @keyframes dice-roll { 0%{transform:rotate(0)} 25%{transform:rotate(-20deg) scale(1.1)} 75%{transform:rotate(20deg) scale(1.1)} 100%{transform:rotate(0) scale(1)} }
+
+  /* ── PIECE SELECTOR ── */
+  .piece-selector {
+    width:100%; max-width:480px; margin-top:8px;
+    display:none; gap:8px; flex-wrap:wrap; justify-content:center;
+  }
+  .piece-selector.visible { display:flex; }
+  .piece-btn {
+    padding:10px 18px; border-radius:12px; border:2px solid transparent; cursor:pointer;
+    font-family:'Fredoka One',cursive; font-size:15px; transition:all 0.2s;
+    background:var(--card); color:#fff; touch-action:manipulation;
+  }
+  .piece-btn:hover, .piece-btn:active { transform:scale(1.05); border-color:#ffffff44; }
+
+  /* ── LOG ── */
+  .game-log {
+    width:100%; max-width:480px; margin-top:8px; background:var(--card);
+    border-radius:12px; padding:10px 14px; max-height:80px; overflow-y:auto;
+    border:1px solid #ffffff0d;
+  }
+  .log-entry { font-size:12px; color:var(--muted); padding:2px 0; }
+  .log-entry span { font-weight:700; }
+
+  /* ── WINNER OVERLAY ── */
+  #winner-overlay {
+    display:none; position:fixed; inset:0; background:#000000cc; z-index:100;
+    align-items:center; justify-content:center; flex-direction:column; gap:16px;
+    backdrop-filter:blur(6px);
+  }
+  #winner-overlay.show { display:flex; }
+  .winner-card {
+    background:var(--card); border-radius:24px; padding:36px 32px; text-align:center;
+    max-width:320px; width:90%; border:1px solid #ffffff18;
+    animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes pop-in { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+  .winner-card .trophy { font-size:64px; margin-bottom:8px; }
+  .winner-card h2 { font-family:'Fredoka One',cursive; font-size:28px; margin-bottom:4px; }
+  .winner-card p { color:var(--muted); font-size:14px; margin-bottom:20px; }
+
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<!-- TOMBOL KEMBALI KE PORTAL -->
+<div style="position:fixed;top:12px;left:12px;z-index:9999;">
+  <button onclick="window.history.back()" style="background:rgba(13,17,23,.85);backdrop-filter:blur(10px);border:1px solid rgba(88,166,255,.3);color:#58a6ff;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Nunito',sans-serif;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Kembali ke Portal
+  </button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- LOBBY -->
+<div id="lobby">
+  <div class="logo">
+    <h1>🎲 LUDO</h1>
+    <p>Portal Kelas MPI · Online Multiplayer</p>
+  </div>
+
+  <!-- NAMA -->
+  <div class="card" id="card-name">
+    <h2>👤 Siapa namamu?</h2>
+    <input type="text" id="input-name" placeholder="Masukkan nama..." maxlength="16"/>
+    <button class="btn btn-primary" onclick="confirmName()">Lanjut →</button>
+  </div>
+
+  <!-- PILIH MODE -->
+  <div class="card hidden" id="card-mode">
+    <h2>🎮 Main Sekarang</h2>
+    <button class="btn btn-primary" onclick="createRoom()">🏠 Buat Room Baru</button>
+    <div class="divider">atau</div>
+    <input type="text" id="input-code" placeholder="Kode room (4 huruf)..." maxlength="4" style="text-transform:uppercase;letter-spacing:4px;text-align:center"/>
+    <button class="btn btn-secondary" onclick="joinRoom()">🚪 Join Room</button>
+  </div>
+
+  <!-- ROOM LOBBY -->
+  <div class="card hidden" id="card-room">
+    <h2>⏳ Ruang Tunggu</h2>
+    <div class="room-code-display">
+      <div class="code" id="display-code">----</div>
+      <p>Bagikan kode ini ke teman-temanmu!</p>
+    </div>
+    <div id="player-list"></div>
+    <p class="status-text pulse" id="waiting-text">Menunggu pemain lain...</p>
+    <button class="btn btn-green hidden" id="btn-start" onclick="startGame()">🚀 Mulai Game!</button>
+    <button class="btn btn-outline" onclick="leaveRoom()" style="margin-top:10px">← Keluar</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="game">
+  <div class="game-header">
+    <div class="room-info">Room: <span id="hdr-code">----</span></div>
+    <button class="btn-leave" onclick="leaveRoom()">✕ Keluar</button>
+  </div>
+
+  <div class="board-wrap">
+    <canvas id="board"></canvas>
+  </div>
+
+  <div class="info-bar" id="info-bar"></div>
+
+  <div class="action-area">
+    <div class="turn-label">
+      <strong id="turn-name">-</strong>
+      <span id="turn-sub">giliran melempar dadu</span>
+    </div>
+    <button class="dice-btn" id="dice-btn" onclick="rollDice()" disabled>🎲</button>
+  </div>
+
+  <div class="piece-selector" id="piece-selector"></div>
+
+  <div class="game-log" id="game-log"></div>
+</div>
+
+<!-- WINNER -->
+<div id="winner-overlay">
+  <div class="winner-card">
+    <div class="trophy">🏆</div>
+    <h2 id="winner-name">Pemain 1</h2>
+    <p id="winner-sub">Menyelesaikan semua bidak!</p>
+    <button class="btn btn-primary" onclick="backToLobby()">🏠 Kembali ke Lobby</button>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, update, remove, push, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCxGPAoeuesXGTk22z-Cill2iyAdwRw8Tw",
+  authDomain: "ludo-c27a0.firebaseapp.com",
+  databaseURL: "https://ludo-c27a0-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ludo-c27a0",
+  storageBucket: "ludo-c27a0.firebasestorage.app",
+  messagingSenderId: "459806340602",
+  appId: "1:459806340602:web:e0822cd1df575592786043",
+  measurementId: "G-B7SFY3GK5D"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ═══════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════
+const COLORS = ['red','blue','green','yellow'];
+const COLOR_HEX = { red:'#e53935', blue:'#1e88e5', green:'#43a047', yellow:'#fdd835' };
+const COLOR_LIGHT = { red:'#ffcdd2', blue:'#bbdefb', green:'#c8e6c9', yellow:'#fff9c4' };
+const DICE_FACES = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
+const HOME_POS = -1; // not yet started
+const FINISH_POS = 57; // finished
+
+// Board path (15x15 grid coords) - standard Ludo path
+// Each color has 56 steps + home stretch
+// Safe squares at positions: 0,8,13,21,26,34,39,47 (global path)
+
+// Grid coords for each step of the global track (56 squares, 0-indexed)
+const TRACK = [
+  // Red starts at index 0, goes clockwise
+  [6,1],[6,2],[6,3],[6,4],[6,5], // col going down left side
+  [5,6],[4,6],[3,6],[2,6],[1,6],[0,6], // row going left top
+  [0,7], // corner
+  [0,8],[1,8],[2,8],[3,8],[4,8],[5,8], // row going right
+  [6,9],[6,10],[6,11],[6,12],[6,13],[6,14], // col going down
+  [7,14], // corner
+  [8,14],[8,13],[8,12],[8,11],[8,10],[8,9], // going up-right
+  [9,8],[10,8],[11,8],[12,8],[13,8],[14,8], // row going right
+  [14,7], // corner
+  [14,6],[13,6],[12,6],[11,6],[10,6],[9,6], // row going left
+  [8,5],[8,4],[8,3],[8,2],[8,1],[8,0], // col going up
+  [7,0], // corner
+  [6,0] // back to near start — index 51? let me count...
+];
+
+// Simplified: use canvas-based visual positions
+// I'll define positions as fractions of canvas size
+
+const N = 15; // 15x15 grid
+// Generate path as cell [row, col] in 15x15 grid
+function buildPath() {
+  // Classic Ludo path, 52 squares
+  const p = [];
+  // Bottom of left column (going up): col=6, rows 14..9
+  for(let r=14;r>=9;r--) p.push([r,6]);
+  // Left row (going left): row=8, cols 5..0  — but ludo goes: row 8, col 5,4,3,2,1,0
+  // Actually standard: from bottom-left going up col6, then left row8, etc.
+  // Let me use a known correct 15x15 Ludo path:
+  const path = [
+    // 0-5: col6 bottom going up
+    [13,6],[12,6],[11,6],[10,6],[9,6],[8,6],
+    // 6-11: row6 going left
+    [7,5],[7,4],[7,3],[7,2],[7,1],[7,0],
+    // 12: corner
+    [6,0],
+    // 13-18: col0 going up? No...
+    // Standard Ludo 15x15 path:
+  ];
+  return path;
+}
+
+// Use a well-known fixed coordinate path for 15x15 Ludo
+// [row, col] 0-indexed, 52 squares total
+const PATH_CELLS = [
+  // Red entry at index 0 (bottom of col 6)
+  [13,6],[12,6],[11,6],[10,6],[9,6],[8,6], // 0-5 going up
+  [7,5],[7,4],[7,3],[7,2],[7,1],[7,0],     // 6-11 going left
+  [6,0],[5,0],[4,0],[3,0],[2,0],[1,0],     // 12-17 going up
+  [0,1],[0,2],[0,3],[0,4],[0,5],[0,6],     // 18-23 going right
+  [0,7],                                    // 24
+  [0,8],[0,9],[0,10],[0,11],[0,12],[0,13], // 25-30 going right
+  [1,14],[2,14],[3,14],[4,14],[5,14],[6,14],// 31-36 going down
+  [7,13],[7,12],[7,11],[7,10],[7,9],[7,8], // 37-42 going right (row7 right side)
+  [8,14],[9,14],[10,14],[11,14],[12,14],[13,14], // 43-48 going down
+  [14,13],[14,12],[14,11],[14,10],[14,9],[14,8], // 49-54 going left
+  [14,7], // 55 — but we need 52! Let me trim to 52
+];
+// Trim to 52
+const MAIN_PATH = PATH_CELLS.slice(0,52);
+
+// Home stretches (6 cells each, going toward center [7,7])
+const HOME_STRETCH = {
+  red:    [[8,1],[8,2],[8,3],[8,4],[8,5],[8,6]],
+  blue:   [[1,8],[2,8],[3,8],[4,8],[5,8],[6,8]],
+  green:  [[6,13],[6,12],[6,11],[6,10],[6,9],[6,8]],
+  yellow: [[13,8],[12,8],[11,8],[10,8],[9,8],[8,8]],
+};
+
+// Start positions on main path (index where each color enters)
+const START_IDX = { red:0, blue:13, green:26, yellow:39 };
+// Entry into home stretch
+const HOME_ENTRY = { red:50, blue:11, green:24, yellow:37 };
+
+// Home base coords (4 pieces per color)
+const HOME_BASE = {
+  red:    [[2,2],[2,3],[3,2],[3,3]],
+  blue:   [[2,11],[2,12],[3,11],[3,12]],
+  green:  [[11,11],[11,12],[12,11],[12,12]],
+  yellow: [[11,2],[11,3],[12,2],[12,3]],
+};
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let myId = null;
+let myName = '';
+let roomCode = '';
+let roomRef = null;
+let unsubscribe = null;
+let gameState = null;
+let localDiceResult = null;
+
+// ═══════════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════════
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+const SZ = 480;
+canvas.width = SZ;
+canvas.height = SZ;
+const CELL = SZ / N; // 32px per cell
+
+function cellCenter(r, c) {
+  return { x: c * CELL + CELL/2, y: r * CELL + CELL/2 };
+}
+
+function drawBoard() {
+  ctx.clearRect(0,0,SZ,SZ);
+
+  // Background
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0,0,SZ,SZ);
+
+  // Draw grid cells
+  for(let r=0;r<N;r++) {
+    for(let c=0;c<N;c++) {
+      const x = c*CELL, y = r*CELL;
+      let fill = '#0f3460';
+      let stroke = '#ffffff08';
+
+      // Home zones (6x6 corners)
+      if(r<=5 && c<=5) fill = '#e5393518'; // red home
+      else if(r<=5 && c>=9) fill = '#1e88e518'; // blue home
+      else if(r>=9 && c>=9) fill = '#43a04718'; // green home
+      else if(r>=9 && c<=5) fill = '#fdd83518'; // yellow home
+
+      // Center zone
+      if(r>=6 && r<=8 && c>=6 && c<=8) fill = '#ffffff08';
+
+      // Main path highlight
+      const onPath = MAIN_PATH.some(([pr,pc])=>pr===r&&pc===c);
+      if(onPath) fill = '#ffffff10';
+
+      // Home stretches
+      if(HOME_STRETCH.red.some(([pr,pc])=>pr===r&&pc===c)) fill = '#e5393530';
+      if(HOME_STRETCH.blue.some(([pr,pc])=>pr===r&&pc===c)) fill = '#1e88e530';
+      if(HOME_STRETCH.green.some(([pr,pc])=>pr===r&&pc===c)) fill = '#43a04730';
+      if(HOME_STRETCH.yellow.some(([pr,pc])=>pr===r&&pc===c)) fill = '#fdd83530';
+
+      // Safe squares (stars)
+      const safeIdx = [0,8,13,21,26,34,39,47];
+      const pathIdx = MAIN_PATH.findIndex(([pr,pc])=>pr===r&&pc===c);
+      if(safeIdx.includes(pathIdx)) fill = '#ffffff22';
+
+      ctx.fillStyle = fill;
+      roundRect(ctx, x+1, y+1, CELL-2, CELL-2, 3);
+      ctx.fill();
+
+      // Safe star
+      if(safeIdx.includes(pathIdx)) {
+        ctx.save();
+        ctx.font = `${CELL*0.5}px serif`;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.globalAlpha=0.5;
+        ctx.fillText('★', x+CELL/2, y+CELL/2);
+        ctx.restore();
+      }
+    }
+  }
+
+  // Draw colored home bases
+  drawHomeBase('red', [1,1], '#e53935');
+  drawHomeBase('blue', [1,9], '#1e88e5');
+  drawHomeBase('green', [9,9], '#43a047');
+  drawHomeBase('yellow', [9,1], '#fdd835');
+
+  // Draw center triangle finish areas
+  drawCenter();
+}
+
+function drawHomeBase(color, [startR, startC], hex) {
+  const x = startC*CELL+CELL*0.2, y = startR*CELL+CELL*0.2;
+  const s = CELL*4.6;
+  ctx.fillStyle = hex+'33';
+  ctx.strokeStyle = hex+'88';
+  ctx.lineWidth = 2;
+  roundRect(ctx, x, y, s, s, 12);
+  ctx.fill(); ctx.stroke();
+
+  // Inner circle
+  ctx.beginPath();
+  ctx.arc(x+s/2, y+s/2, s*0.35, 0, Math.PI*2);
+  ctx.fillStyle = hex+'22';
+  ctx.fill();
+  ctx.strokeStyle = hex+'55';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function drawCenter() {
+  const cx = SZ/2, cy = SZ/2, s = CELL*3;
+  // 4 triangles pointing to center
+  const colors = ['#e53935','#1e88e5','#43a047','#fdd835'];
+  const angles = [Math.PI/2, 0, -Math.PI/2, Math.PI]; // red top, blue right, green bottom, yellow left
+  // Actually: red=bottom, blue=left... standard ludo
+  // red triangle at bottom pointing up
+  const tris = [
+    // red: bottom
+    [[cx-s/2,cy+s/2],[cx+s/2,cy+s/2],[cx,cy]],
+    // blue: left
+    [[cx-s/2,cy-s/2],[cx-s/2,cy+s/2],[cx,cy]],
+    // green: top
+    [[cx-s/2,cy-s/2],[cx+s/2,cy-s/2],[cx,cy]],
+    // yellow: right
+    [[cx+s/2,cy-s/2],[cx+s/2,cy+s/2],[cx,cy]],
+  ];
+  tris.forEach((pts,i) => {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0],pts[0][1]);
+    ctx.lineTo(pts[1][0],pts[1][1]);
+    ctx.lineTo(pts[2][0],pts[2][1]);
+    ctx.closePath();
+    ctx.fillStyle = colors[i]+'88';
+    ctx.fill();
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+function getPieceCell(color, pieceIdx, pos) {
+  if(pos === HOME_POS) {
+    return HOME_BASE[color][pieceIdx];
+  }
+  if(pos >= 52) {
+    // home stretch: pos 52..57
+    const hsIdx = pos - 52;
+    if(hsIdx < 6) return HOME_STRETCH[color][hsIdx];
+    return null; // finished
+  }
+  // main path: offset by start
+  const startOff = START_IDX[color];
+  const absIdx = (startOff + pos) % 52;
+  return MAIN_PATH[absIdx];
+}
+
+function drawPieces() {
+  if(!gameState || !gameState.pieces) return;
+
+  // Group pieces by cell to handle stacking
+  const cellMap = {};
+  COLORS.forEach(color => {
+    const playerColor = getPlayerColor(color);
+    if(!playerColor) return;
+    const pieces = gameState.pieces[playerColor] || [];
+    pieces.forEach((pos, i) => {
+      const cell = getPieceCell(playerColor, i, pos);
+      if(!cell) return;
+      const key = cell[0]+','+cell[1];
+      if(!cellMap[key]) cellMap[key] = [];
+      cellMap[key].push({color:playerColor, pieceIdx:i, pos});
+    });
+  });
+
+  // Draw each group
+  Object.entries(cellMap).forEach(([key, group]) => {
+    const [r,c] = key.split(',').map(Number);
+    const {x,y} = cellCenter(r,c);
+    const n = group.length;
+    group.forEach(({color, pieceIdx, pos}, gi) => {
+      let ox=0, oy=0;
+      if(n>1) {
+        const angle = (gi/n)*Math.PI*2 - Math.PI/2;
+        ox = Math.cos(angle)*CELL*0.22;
+        oy = Math.sin(angle)*CELL*0.22;
+      }
+      drawPiece(x+ox, y+oy, color, pos, pieceIdx);
+    });
+  });
+}
+
+function drawPiece(x, y, color, pos, idx) {
+  const r = CELL*0.32;
+  const hex = COLOR_HEX[color];
+  const light = COLOR_LIGHT[color];
+
+  // Shadow
+  ctx.beginPath();
+  ctx.arc(x, y+2, r, 0, Math.PI*2);
+  ctx.fillStyle = '#00000044';
+  ctx.fill();
+
+  // Body
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  const grad = ctx.createRadialGradient(x-r*0.3, y-r*0.3, 0, x, y, r);
+  grad.addColorStop(0, light);
+  grad.addColorStop(1, hex);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Border
+  ctx.strokeStyle = pos === HOME_POS ? hex+'88' : '#ffffffcc';
+  ctx.lineWidth = pos === HOME_POS ? 1 : 2;
+  ctx.stroke();
+
+  // Highlight
+  ctx.beginPath();
+  ctx.arc(x-r*0.3, y-r*0.3, r*0.3, 0, Math.PI*2);
+  ctx.fillStyle = '#ffffff55';
+  ctx.fill();
+
+  // Number
+  ctx.fillStyle = pos === HOME_POS ? hex : '#fff';
+  ctx.font = `bold ${CELL*0.28}px Nunito`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(idx+1, x, y+1);
+}
+
+function getPlayerColor(colorOrIdx) {
+  if(!gameState || !gameState.players) return null;
+  const players = Object.values(gameState.players);
+  const found = players.find(p => p.color === colorOrIdx);
+  return found ? found.color : null;
+}
+
+function render() {
+  drawBoard();
+  drawPieces();
+}
+
+// ═══════════════════════════════════════════════
+// GAME LOGIC
+// ═══════════════════════════════════════════════
+function initPieces(playerIds) {
+  const pieces = {};
+  playerIds.forEach((pid, i) => {
+    pieces[pid] = [-1,-1,-1,-1]; // all at home
+  });
+  return pieces;
+}
+
+function canMove(color, pieceIdx, dice, gs) {
+  const pos = gs.pieces[color][pieceIdx];
+  if(pos === HOME_POS) return dice === 6;
+  if(pos >= 52) {
+    const newPos = pos + dice;
+    return newPos <= 57; // max finish
+  }
+  // Check home entry
+  const entry = HOME_ENTRY[color];
+  const startOff = START_IDX[color];
+  const absPos = pos; // relative to color start
+
+  // Would moving put us past entry into home stretch?
+  const newPos = pos + dice;
+  return newPos <= 57;
+}
+
+function getMovablePieces(gs, dice) {
+  if(!gs || !gs.currentTurn || !gs.pieces) return [];
+  const color = gs.currentTurn;
+  const movable = [];
+  for(let i=0;i<4;i++) {
+    if(canMove(color, i, dice, gs)) movable.push(i);
+  }
+  return movable;
+}
+
+function movePiece(color, pieceIdx, dice, gs) {
+  const pos = gs.pieces[color][pieceIdx];
+  let newPos;
+  if(pos === HOME_POS) {
+    newPos = 0; // enter board
+  } else {
+    newPos = pos + dice;
+  }
+
+  // Check capture
+  let captured = false;
+  if(newPos < 52) {
+    const absIdx = (START_IDX[color] + newPos) % 52;
+    const safeIdx = [0,8,13,21,26,34,39,47];
+    if(!safeIdx.includes(newPos)) {
+      // Check other pieces
+      Object.entries(gs.pieces).forEach(([otherColor, otherPieces]) => {
+        if(otherColor === color) return;
+        otherPieces.forEach((oPos, oi) => {
+          if(oPos < 0 || oPos >= 52) return;
+          const oAbsIdx = (START_IDX[otherColor] + oPos) % 52;
+          if(oAbsIdx === absIdx) {
+            gs.pieces[otherColor][oi] = -1; // send home
+            captured = true;
+          }
+        });
+      });
+    }
+  }
+
+  gs.pieces[color][pieceIdx] = newPos;
+  return { newPos, captured };
+}
+
+function checkWin(color, gs) {
+  return gs.pieces[color].every(p => p >= 57);
+}
+
+function nextTurn(gs) {
+  const players = Object.values(gs.players).sort((a,b)=>a.order-b.order);
+  const idx = players.findIndex(p=>p.color===gs.currentTurn);
+  const next = players[(idx+1) % players.length];
+  return next.color;
+}
+
+// ═══════════════════════════════════════════════
+// FIREBASE ACTIONS
+// ═══════════════════════════════════════════════
+window.confirmName = function() {
+  const v = document.getElementById('input-name').value.trim();
+  if(!v) { showToast('Masukkan nama dulu!'); return; }
+  myName = v;
+  myId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  document.getElementById('card-name').classList.add('hidden');
+  document.getElementById('card-mode').classList.remove('hidden');
+};
+
+window.createRoom = async function() {
+  const code = Math.random().toString(36).slice(2,6).toUpperCase();
+  roomCode = code;
+  roomRef = ref(db, 'rooms/'+code);
+  const gs = {
+    phase: 'lobby',
+    host: myId,
+    currentTurn: null,
+    dice: null,
+    diceRolled: false,
+    players: {
+      [myId]: { id:myId, name:myName, color:'red', order:0, score:0 }
+    },
+    pieces: { red: [-1,-1,-1,-1] },
+    log: []
+  };
+  await set(roomRef, gs);
+  listenRoom();
+  showRoomCard(code);
+};
+
+window.joinRoom = async function() {
+  const code = document.getElementById('input-code').value.trim().toUpperCase();
+  if(code.length !== 4) { showToast('Kode harus 4 huruf!'); return; }
+  roomCode = code;
+  roomRef = ref(db, 'rooms/'+code);
+  const snap = await get(roomRef);
+  if(!snap.exists()) { showToast('Room tidak ditemukan!'); return; }
+  const gs = snap.val();
+  if(gs.phase !== 'lobby') { showToast('Game sudah dimulai!'); return; }
+  const playerCount = Object.keys(gs.players||{}).length;
+  if(playerCount >= 4) { showToast('Room penuh! (maks 4 pemain)'); return; }
+
+  const colorOrder = ['red','blue','green','yellow'];
+  const usedColors = Object.values(gs.players).map(p=>p.color);
+  const myColor = colorOrder.find(c=>!usedColors.includes(c));
+
+  const updates = {};
+  updates[`players/${myId}`] = { id:myId, name:myName, color:myColor, order:playerCount, score:0 };
+  updates[`pieces/${myColor}`] = [-1,-1,-1,-1];
+  await update(roomRef, updates);
+  listenRoom();
+  showRoomCard(code);
+};
+
+window.startGame = async function() {
+  if(!gameState) return;
+  const players = Object.values(gameState.players).sort((a,b)=>a.order-b.order);
+  const firstColor = players[0].color;
+  await update(roomRef, {
+    phase: 'playing',
+    currentTurn: firstColor,
+    diceRolled: false,
+    dice: null
+  });
+  addLog(`Game dimulai! Giliran ${players[0].name} 🎲`);
+};
+
+window.rollDice = async function() {
+  if(!gameState || gameState.diceRolled) return;
+  const myColor = getMyColor();
+  if(gameState.currentTurn !== myColor) return;
+
+  const dice = Math.floor(Math.random()*6)+1;
+  localDiceResult = dice;
+
+  // Animate
+  const btn = document.getElementById('dice-btn');
+  btn.classList.add('rolling');
+  btn.textContent = DICE_FACES[dice];
+  setTimeout(() => btn.classList.remove('rolling'), 500);
+
+  await update(roomRef, { dice, diceRolled: true });
+  addLog(`${myName} melempar dadu: ${dice} ${DICE_FACES[dice]}`);
+
+  // Check movable pieces
+  const gs = { ...gameState, dice, diceRolled: true };
+  const movable = getMovablePieces(gs, dice);
+
+  if(movable.length === 0) {
+    // No moves, next turn (unless 6)
+    showToast(`Tidak ada bidak yang bisa bergerak!`);
+    setTimeout(async () => {
+      await update(roomRef, {
+        currentTurn: nextTurn(gs),
+        diceRolled: false,
+        dice: null
+      });
+    }, 1500);
+  } else if(movable.length === 1) {
+    // Auto move
+    setTimeout(() => doMove(movable[0]), 600);
+  } else {
+    showPieceSelector(movable, dice);
+  }
+};
+
+window.selectPiece = async function(pieceIdx) {
+  hidePieceSelector();
+  await doMove(pieceIdx);
+};
+
+async function doMove(pieceIdx) {
+  if(!gameState) return;
+  const myColor = getMyColor();
+  const dice = gameState.dice;
+  const gs = JSON.parse(JSON.stringify(gameState));
+
+  const { newPos, captured } = movePiece(myColor, pieceIdx, dice, gs);
+
+  const updates = { [`pieces/${myColor}`]: gs.pieces[myColor] };
+
+  if(captured) {
+    // Also update captured pieces
+    Object.entries(gs.pieces).forEach(([c, arr]) => {
+      if(c !== myColor) updates[`pieces/${c}`] = arr;
+    });
+    addLog(`${myName} menendang bidak lawan! 💥`);
+    showToast('💥 Bidak lawan ditendang!');
+  }
+
+  if(checkWin(myColor, gs)) {
+    updates.phase = 'finished';
+    updates.winner = myId;
+    updates.diceRolled = false;
+  } else if(dice === 6 && newPos !== HOME_POS) {
+    // Extra turn for 6
+    updates.diceRolled = false;
+    updates.dice = null;
+    addLog(`${myName} dapat giliran lagi karena dadu 6! 🎉`);
+    showToast('🎉 Dadu 6! Main lagi!');
+  } else {
+    updates.currentTurn = nextTurn(gs);
+    updates.diceRolled = false;
+    updates.dice = null;
+  }
+
+  await update(roomRef, updates);
+}
+
+function listenRoom() {
+  if(unsubscribe) unsubscribe();
+  unsubscribe = onValue(roomRef, (snap) => {
+    if(!snap.exists()) { backToLobby(); return; }
+    gameState = snap.val();
+    // Normalize pieces arrays (Firebase turns arrays to objects sometimes)
+    if(gameState.pieces) {
+      Object.keys(gameState.pieces).forEach(c => {
+        if(!Array.isArray(gameState.pieces[c])) {
+          gameState.pieces[c] = Object.values(gameState.pieces[c]);
+        }
+      });
+    }
+    updateUI();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// UI UPDATES
+// ═══════════════════════════════════════════════
+function updateUI() {
+  if(!gameState) return;
+
+  if(gameState.phase === 'lobby') {
+    updateLobbyUI();
+  } else if(gameState.phase === 'playing') {
+    showGameScreen();
+    updateGameUI();
+  } else if(gameState.phase === 'finished') {
+    showGameScreen();
+    updateGameUI();
+    showWinner();
+  }
+}
+
+function updateLobbyUI() {
+  const players = Object.values(gameState.players||{}).sort((a,b)=>a.order-b.order);
+  const isHost = gameState.host === myId;
+  const list = document.getElementById('player-list');
+  list.innerHTML = players.map(p => {
+    const isYou = p.id === myId;
+    return `<div class="player-slot filled" style="--slot-color:${COLOR_HEX[p.color]}">
+      <div class="dot"></div>
+      <div class="name">${p.name}${isYou?'':''}</div>
+      <div class="badge ${isYou?'you':''}">${isYou?'Kamu':''}${p.id===gameState.host?' 👑':''}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('waiting-text').textContent =
+    players.length < 2 ? 'Menunggu pemain lain...' :
+    isHost ? 'Siap mulai!' : 'Menunggu host memulai...';
+
+  const startBtn = document.getElementById('btn-start');
+  if(isHost && players.length >= 2) {
+    startBtn.classList.remove('hidden');
+  } else {
+    startBtn.classList.add('hidden');
+  }
+}
+
+function showRoomCard(code) {
+  document.getElementById('card-mode').classList.add('hidden');
+  document.getElementById('card-room').classList.remove('hidden');
+  document.getElementById('display-code').textContent = code;
+  document.getElementById('hdr-code').textContent = code;
+}
+
+function showGameScreen() {
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('game').style.display = 'flex';
+  render();
+}
+
+function updateGameUI() {
+  if(!gameState) return;
+  render();
+
+  const players = Object.values(gameState.players||{}).sort((a,b)=>a.order-b.order);
+  const myColor = getMyColor();
+  const currentColor = gameState.currentTurn;
+  const currentPlayer = players.find(p=>p.color===currentColor);
+  const isMyTurn = currentColor === myColor;
+
+  // Info bar
+  const bar = document.getElementById('info-bar');
+  bar.innerHTML = players.map(p => {
+    const finished = gameState.pieces?.[p.color]?.filter(x=>x>=57).length || 0;
+    return `<div class="player-info ${p.color===currentColor?'active':''}"
+      style="--pi-color:${COLOR_HEX[p.color]}; border-left-color:${COLOR_HEX[p.color]}${p.color===currentColor?'':'44'}">
+      <div class="pi-name" style="color:${COLOR_HEX[p.color]}">${p.name}</div>
+      <div class="pi-score" style="color:${COLOR_HEX[p.color]}">${finished}/4 🏠</div>
+      ${p.id===myId?`<div class="pi-you">Kamu</div>`:''}
+    </div>`;
+  }).join('');
+
+  // Dice button
+  const diceBtn = document.getElementById('dice-btn');
+  const canRoll = isMyTurn && !gameState.diceRolled && gameState.phase === 'playing';
+  diceBtn.disabled = !canRoll;
+  if(gameState.diceRolled && gameState.dice) {
+    diceBtn.textContent = DICE_FACES[gameState.dice];
+  } else {
+    diceBtn.textContent = '🎲';
+  }
+
+  // Turn label
+  document.getElementById('turn-name').textContent =
+    isMyTurn ? 'Giliranmu!' : (currentPlayer?.name || '-');
+  document.getElementById('turn-sub').textContent =
+    isMyTurn
+      ? (gameState.diceRolled ? 'Pilih bidak yang mau digerakkan' : 'Lempar dadu sekarang!')
+      : 'sedang bermain...';
+}
+
+function showPieceSelector(movable, dice) {
+  const myColor = getMyColor();
+  const sel = document.getElementById('piece-selector');
+  sel.classList.add('visible');
+  sel.innerHTML = `<div style="width:100%;text-align:center;font-size:13px;color:var(--muted);margin-bottom:4px">Pilih bidak yang mau digerakkan:</div>` +
+    movable.map(i => {
+      const pos = gameState.pieces[myColor][i];
+      const label = pos === HOME_POS ? `Bidak ${i+1} (masuk papan)` : `Bidak ${i+1} (langkah ${pos}→${pos+dice})`;
+      return `<button class="piece-btn" style="border-color:${COLOR_HEX[myColor]}88;color:${COLOR_HEX[myColor]}"
+        onclick="selectPiece(${i})">${label}</button>`;
+    }).join('');
+}
+
+function hidePieceSelector() {
+  document.getElementById('piece-selector').classList.remove('visible');
+  document.getElementById('piece-selector').innerHTML = '';
+}
+
+function showWinner() {
+  if(!gameState.winner) return;
+  const winner = gameState.players?.[gameState.winner];
+  if(!winner) return;
+  document.getElementById('winner-name').textContent =
+    winner.id === myId ? '🎉 Kamu Menang!' : `${winner.name} Menang!`;
+  document.getElementById('winner-sub').textContent =
+    winner.id === myId ? 'Semua bidakmu sudah sampai rumah!' : 'Lebih beruntung lain kali ya!';
+  document.getElementById('winner-overlay').classList.add('show');
+}
+
+function addLog(msg) {
+  const logEl = document.getElementById('game-log');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span>${new Date().toLocaleTimeString('id',{hour:'2-digit',minute:'2-digit'})}</span> ${msg}`;
+  logEl.insertBefore(entry, logEl.firstChild);
+  if(logEl.children.length > 20) logEl.removeChild(logEl.lastChild);
+}
+
+function getMyColor() {
+  if(!gameState?.players?.[myId]) return null;
+  return gameState.players[myId].color;
+}
+
+window.leaveRoom = async function() {
+  if(roomRef && myId) {
+    await remove(ref(db, `rooms/${roomCode}/players/${myId}`));
+  }
+  if(unsubscribe) { unsubscribe(); unsubscribe = null; }
+  roomRef = null; roomCode = ''; gameState = null;
+  backToLobby();
+};
+
+window.backToLobby = function() {
+  document.getElementById('winner-overlay').classList.remove('show');
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('lobby').style.display = 'flex';
+  document.getElementById('card-room').classList.add('hidden');
+  document.getElementById('card-mode').classList.remove('hidden');
+  document.getElementById('input-code').value = '';
+};
+
+function showToast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+// Initial draw
+drawBoard();
+</script>
+</body>
+</html>

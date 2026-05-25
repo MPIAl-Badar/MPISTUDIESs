@@ -1,0 +1,2535 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Panel · Portal MPI</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #080c10;
+  --bg2: #0d1117;
+  --surface: #111820;
+  --surface2: #161e28;
+  --border: #1e2d3d;
+  --border2: #2a3f52;
+  --accent: #00d4ff;
+  --accent2: #0094b3;
+  --gold: #ffd166;
+  --green: #06d6a0;
+  --red: #ef476f;
+  --orange: #ff9f43;
+  --purple: #a855f7;
+  --text: #e2eaf4;
+  --muted: #6b8299;
+  --dim: #374151;
+  --glow: rgba(0,212,255,0.12);
+  --glow2: rgba(0,212,255,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); }
+body { font-family: 'Sora', sans-serif; color: var(--text); overflow: hidden; }
+
+/* ── GRID LAYOUT ─────────────────────────────── */
+#app { display: grid; grid-template-columns: 240px 1fr; grid-template-rows: 56px 1fr; height: 100vh; }
+
+/* ── HEADER ──────────────────────────────────── */
+#topbar {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 12px;
+  position: relative; z-index: 100;
+  height: 52px; gap: 6px;
+}
+#topbar::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.4; pointer-events: none;
+}
+.topbar-left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; min-width: 0; }
+.topbar-logo {
+  width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), #005f80);
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.topbar-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.topbar-sub { font-size: 9px; color: var(--muted); white-space: nowrap; }
+.topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.status-pill {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(6,214,160,0.08); border: 1px solid rgba(6,214,160,0.2);
+  border-radius: 20px; padding: 3px 8px; font-size: 10px; color: var(--green); white-space: nowrap;
+}
+.status-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; background: var(--green); animation: blink 2s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.admin-badge {
+  background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.25);
+  color: var(--accent); font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 5px; font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar-time { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); white-space: nowrap; }
+#btn-tutup {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(239,71,111,0.1); border: 1px solid rgba(239,71,111,0.22);
+  color: var(--red); font-size: 10px; font-weight: 600;
+  padding: 4px 10px; border-radius: 6px; cursor: pointer;
+  font-family: 'Sora', sans-serif; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+}
+#btn-tutup:hover { background: rgba(239,71,111,0.2); }
+
+/* ── SIDEBAR ─────────────────────────────────── */
+#sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow-y: auto; overflow-x: hidden;
+  padding: 12px 0 20px;
+}
+#sidebar::-webkit-scrollbar { width: 2px; }
+#sidebar::-webkit-scrollbar-thumb { background: var(--border2); }
+.sidebar-section { margin-bottom: 4px; }
+.sidebar-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  color: var(--dim); text-transform: uppercase;
+  padding: 8px 16px 4px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; cursor: pointer; font-size: 13px; font-weight: 500;
+  color: var(--muted); transition: all 0.15s; border: none; background: none;
+  width: 100%; text-align: left; font-family: 'Sora', sans-serif;
+  border-left: 3px solid transparent;
+  position: relative;
+}
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.nav-item.active {
+  color: var(--accent); background: var(--glow);
+  border-left-color: var(--accent);
+}
+.nav-item .icon { width: 16px; text-align: center; font-size: 14px; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: var(--red); color: #fff;
+  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.nav-badge.green { background: var(--green); color: var(--bg); }
+.nav-badge.orange { background: var(--orange); color: var(--bg); }
+
+/* ── MAIN CONTENT ────────────────────────────── */
+#main {
+  overflow-y: auto; overflow-x: hidden;
+  background: var(--bg2);
+  padding: 24px;
+}
+#main::-webkit-scrollbar { width: 3px; }
+#main::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* ── PAGE ────────────────────────────────────── */
+.page { display: none; animation: fadeIn 0.2s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+.page-header { margin-bottom: 20px; }
+.page-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.page-sub { font-size: 12px; color: var(--muted); }
+
+/* ── CARDS ───────────────────────────────────── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px; margin-bottom: 14px;
+}
+.card-title {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px;
+  font-family: 'JetBrains Mono', monospace; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+/* ── STATS ROW ───────────────────────────────── */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 14px;
+  transition: border-color 0.2s;
+}
+.stat-box:hover { border-color: var(--border2); }
+.stat-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px;
+}
+.stat-label { font-size: 11px; color: var(--muted); }
+.stat-change { font-size: 10px; margin-top: 6px; }
+.stat-change.up { color: var(--green); }
+.stat-change.down { color: var(--red); }
+
+/* ── TOGGLE SWITCH ───────────────────────────── */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-info { flex: 1; }
+.toggle-label { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+.toggle-desc { font-size: 11px; color: var(--muted); }
+.toggle-wrap { display: flex; align-items: center; gap: 10px; }
+.toggle-status { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+.toggle-status.on { color: var(--green); }
+.toggle-status.off { color: var(--red); }
+.switch {
+  position: relative; width: 40px; height: 22px; cursor: pointer;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0;
+  background: var(--dim); border-radius: 11px;
+  transition: background 0.25s;
+}
+.slider::before {
+  content: ''; position: absolute;
+  width: 16px; height: 16px; border-radius: 50%;
+  left: 3px; top: 3px; background: var(--muted);
+  transition: transform 0.25s, background 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.switch input:checked + .slider { background: rgba(0,212,255,0.25); border: 1px solid var(--accent); }
+.switch input:checked + .slider::before { transform: translateX(18px); background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+/* ── TABLE ───────────────────────────────────── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th {
+  text-align: left; padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+  color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.data-table td {
+  padding: 10px 12px; border-bottom: 1px solid rgba(30,45,61,0.5);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+.user-row { display: flex; align-items: center; gap: 8px; }
+.user-av {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.badge.online { background: rgba(6,214,160,0.12); color: var(--green); border: 1px solid rgba(6,214,160,0.25); }
+.badge.offline { background: rgba(107,130,153,0.12); color: var(--muted); border: 1px solid var(--border); }
+.badge.active { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+.badge.blocked { background: rgba(239,71,111,0.12); color: var(--red); border: 1px solid rgba(239,71,111,0.25); }
+.badge.kosma { background: rgba(255,209,102,0.12); color: var(--gold); border: 1px solid rgba(255,209,102,0.25); }
+.badge.sekre { background: rgba(168,85,247,0.12); color: var(--purple); border: 1px solid rgba(168,85,247,0.25); }
+
+/* ── BUTTONS ─────────────────────────────────── */
+.btn {
+  border: none; cursor: pointer; font-family: 'Sora', sans-serif;
+  font-weight: 600; border-radius: 8px; transition: all 0.15s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-sm { font-size: 11px; padding: 5px 10px; }
+.btn-md { font-size: 13px; padding: 9px 16px; }
+.btn-lg { font-size: 13px; padding: 11px 20px; width: 100%; justify-content: center; }
+.btn-primary { background: var(--accent); color: var(--bg); }
+.btn-primary:hover { opacity: 0.85; box-shadow: 0 0 16px rgba(0,212,255,0.3); }
+.btn-danger { background: rgba(239,71,111,0.15); color: var(--red); border: 1px solid rgba(239,71,111,0.25); }
+.btn-danger:hover { background: rgba(239,71,111,0.25); }
+.btn-success { background: rgba(6,214,160,0.15); color: var(--green); border: 1px solid rgba(6,214,160,0.25); }
+.btn-success:hover { background: rgba(6,214,160,0.25); }
+.btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--muted); }
+.btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+.btn-warn { background: rgba(255,159,67,0.15); color: var(--orange); border: 1px solid rgba(255,159,67,0.25); }
+.btn-warn:hover { background: rgba(255,159,67,0.25); }
+
+/* ── INPUT ───────────────────────────────────── */
+.input {
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text); padding: 9px 12px; border-radius: 8px;
+  font-family: 'Sora', sans-serif; font-size: 13px; outline: none;
+  transition: border-color 0.2s; width: 100%;
+}
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow2); }
+.input::placeholder { color: var(--dim); }
+.label { font-size: 11px; color: var(--muted); margin-bottom: 5px; display: block; font-weight: 500; }
+.form-group { margin-bottom: 12px; }
+
+/* ── LOGIN ACCESS LOG ─────────────────────────── */
+.log-entry {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid rgba(30,45,61,0.5);
+  font-size: 12px;
+}
+.log-entry:last-child { border-bottom: none; }
+.log-time { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); white-space: nowrap; min-width: 70px; margin-top: 2px; }
+.log-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.log-dot.success { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.log-dot.fail { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.log-dot.action { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+/* ── ANNOUNCEMENT PREVIEW ────────────────────── */
+.preview-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; font-size: 13px; line-height: 1.6;
+  color: var(--muted); min-height: 60px;
+}
+.item-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid rgba(30,45,61,0.4);
+}
+.item-row:last-child { border-bottom: none; }
+.item-text { flex: 1; font-size: 12px; }
+.item-title { font-weight: 600; color: var(--text); margin-bottom: 1px; }
+.item-meta { color: var(--muted); font-size: 11px; }
+.item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── STORAGE BAR ─────────────────────────────── */
+.storage-bar-wrap { background: var(--bg2); border-radius: 4px; height: 6px; overflow: hidden; margin: 6px 0; }
+.storage-bar { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+/* ── MODAL ───────────────────────────────────── */
+#modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center; z-index: 500;
+  backdrop-filter: blur(4px); padding: 20px;
+}
+#modal-bg.hidden { display: none; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 24px; width: 100%; max-width: 420px;
+  animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+.modal-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+
+/* ── TOAST ───────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 12px 18px; font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  transform: translateY(80px); opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  max-width: 320px;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+.toast-icon { font-size: 16px; flex-shrink: 0; }
+
+/* ── CONFIRM BOX ─────────────────────────────── */
+.confirm-box {
+  background: rgba(239,71,111,0.08); border: 1px solid rgba(239,71,111,0.25);
+  border-radius: 10px; padding: 14px; margin-bottom: 14px;
+  font-size: 12px; color: #d88; line-height: 1.5;
+}
+
+/* ── SECTION DIVIDER ─────────────────────────── */
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* ── QUICK ACTION ────────────────────────────── */
+.quick-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+.quick-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 10px; text-align: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.quick-btn:hover { border-color: var(--accent); background: var(--glow2); }
+.quick-icon { font-size: 22px; margin-bottom: 6px; }
+.quick-label { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+/* ── PASSWORD CHANGE ─────────────────────────── */
+.key-display {
+  background: var(--bg); border: 1px solid var(--border2); border-radius: 8px;
+  padding: 12px 16px; font-family: 'JetBrains Mono', monospace; font-size: 18px;
+  font-weight: 700; letter-spacing: 3px; color: var(--gold); text-align: center;
+}
+
+/* ── SCROLLBAR ───────────────────────────────── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── RESPONSIVE ──────────────────────────────── */
+@media (max-width: 900px) {
+  #app { grid-template-columns: 200px 1fr; }
+  .stats-row { grid-template-columns: repeat(2,1fr); }
+  .quick-grid { grid-template-columns: repeat(2,1fr); }
+  .topbar-time { display: none; }
+  .status-pill { display: none; }
+}
+@media (max-width: 680px) {
+  #app { grid-template-columns: 1fr; grid-template-rows: 52px auto 1fr; }
+  #sidebar { display: none; }
+  #main { padding: 14px; }
+  .topbar-sub { display: none; }
+  .stats-row { grid-template-columns: repeat(2,1fr); }
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  .quick-grid { grid-template-columns: repeat(2,1fr); }
+}
+
+/* ── TABEL → CARD di mobile ──────────────────── */
+@media (max-width: 700px) {
+  .data-table thead { display: none; }
+  .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
+  .data-table tr {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 8px; padding: 10px 12px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  }
+  .data-table td { padding: 0; border: none; }
+  .data-table td:first-child { flex: 1 1 100%; }
+  .data-table td:nth-child(2) { flex: 0 0 auto; }
+  .data-table td:nth-child(3) { flex: 0 0 auto; }
+  .data-table td:last-child { flex: 0 0 auto; margin-left: auto; }
+}
+</style>
+</head>
+<body>
+<!-- ══ ADMIN LOGIN OVERLAY ══ -->
+<div id="admin-login-overlay" style="position:fixed;inset:0;background:#080c10;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:#111820;border:1px solid #1e2d3d;border-radius:20px;padding:32px 28px;width:100%;max-width:380px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.7);">
+    <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#00d4ff,#005f80);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;box-shadow:0 0 24px rgba(0,212,255,.3)">⚙️</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#00d4ff;margin-bottom:4px;">ADMIN PANEL</div>
+    <div style="font-size:11px;color:#6b8299;margin-bottom:24px;">Portal Kelas MPI · STAI Al-Badar<br>Akses khusus administrator</div>
+    <div style="margin-bottom:12px;text-align:left;">
+      <label style="font-size:11px;color:#6b8299;display:block;margin-bottom:5px;font-weight:500;">Password Admin</label>
+      <input type="password" id="admin-login-pw" placeholder="Masukkan password admin..." onkeydown="if(event.key==='Enter')checkAdminLogin()"
+        style="background:#0d1117;border:1px solid #1e2d3d;color:#e2eaf4;padding:10px 12px;border-radius:8px;font-family:'Sora',sans-serif;font-size:13px;outline:none;width:100%;"/>
+    </div>
+    <div id="admin-login-err" style="background:rgba(239,71,111,.12);border:1px solid rgba(239,71,111,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:#ef476f;margin-bottom:12px;display:none;">Password salah. Hanya admin yang diizinkan.</div>
+    <button onclick="checkAdminLogin()" style="background:#00d4ff;color:#080c10;border:none;padding:11px 20px;border-radius:8px;font-weight:700;font-size:13px;width:100%;cursor:pointer;font-family:'Sora',sans-serif;">Masuk ke Admin Panel →</button>
+    <div style="font-size:10px;color:#374151;margin-top:16px;">Hanya <strong style="color:#00d4ff">Aep Mulyana</strong> yang berhak mengakses panel ini</div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <!-- ── TOPBAR ── -->
+  <div id="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">&#9881;</div>
+      <div>
+        <div class="topbar-title">ADMIN PANEL</div>
+        <div class="topbar-sub">Portal MPI</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill"><div class="status-dot"></div>Aktif</div>
+      <div class="topbar-time" id="topbar-clock">--:--</div>
+      <div class="admin-badge" id="topbar-admin-name">ADMIN</div>
+      <button id="btn-tutup" onclick="tutupPanel()">&#x2715; Tutup</button>
+    </div>
+  </div>
+
+  <!-- ── SIDEBAR ── -->
+  <div id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Overview</div>
+      <button class="nav-item active" onclick="showPage('dashboard')">
+        <span class="icon">🏠</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="showPage('users')">
+        <span class="icon">👥</span> Anggota
+        <span class="nav-badge green" id="badge-users">12</span>
+      </button>
+      <button class="nav-item" onclick="showPage('logs')">
+        <span class="icon">📋</span> Log Akses
+        <span class="nav-badge" id="badge-logs">0</span>
+      </button>
+      <button class="nav-item" onclick="showPage('kiriman')">
+        <span class="icon">📨</span> Kiriman Anggota
+        <span class="nav-badge orange" id="badge-kiriman">0</span>
+      </button>
+      <button class="nav-item" onclick="showPage('kas')">
+        <span class="icon">💰</span> Kas Kelas
+        <span class="nav-badge" id="badge-kas-belum" style="background:var(--orange)">0</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Kontrol Fitur</div>
+      <button class="nav-item" onclick="showPage('features')">
+        <span class="icon">🔧</span> Kelola Fitur
+      </button>
+      <button class="nav-item" onclick="showPage('content')">
+        <span class="icon">📝</span> Konten Portal
+      </button>
+      <button class="nav-item" onclick="showPage('access')">
+        <span class="icon">🔐</span> Hak Akses
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Data</div>
+      <button class="nav-item" onclick="showPage('storage')">
+        <span class="icon">💾</span> Storage & Data
+      </button>
+      <button class="nav-item" onclick="showPage('security')">
+        <span class="icon">🛡️</span> Keamanan
+      </button>
+      <button class="nav-item" onclick="showPage('broadcast')">
+        <span class="icon">📢</span> Siaran Pengumuman
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Sistem</div>
+      <button class="nav-item" onclick="showPage('settings')">
+        <span class="icon">⚙️</span> Pengaturan
+      </button>
+    </div>
+  </div>
+
+  <!-- ── MAIN ── -->
+  <div id="main">
+
+    <!-- ════════════════ DASHBOARD ════════════════ -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">🏠 Dashboard</div>
+        <div class="page-sub">Ringkasan sistem dan aktivitas portal</div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--accent)" id="stat-anggota">12</div>
+          <div class="stat-label">Total Anggota</div>
+          <div class="stat-change up">▲ 2 kelas aktif</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--green)" id="stat-tugas">0</div>
+          <div class="stat-label">Tugas Aktif</div>
+          <div class="stat-change" id="stat-tugas-sub" style="color:var(--muted)">Dari localStorage</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--gold)" id="stat-pengumuman">0</div>
+          <div class="stat-label">Pengumuman</div>
+          <div class="stat-change" style="color:var(--muted)">Portal data</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--orange)" id="stat-storage">—</div>
+          <div class="stat-label">Storage (KB)</div>
+          <div class="stat-change" style="color:var(--muted)">localStorage</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>AKSI CEPAT</div>
+        <div class="quick-grid">
+          <div class="quick-btn" onclick="showPage('users')">
+            <div class="quick-icon">👤</div>
+            <div class="quick-label">Kelola Anggota</div>
+          </div>
+          <div class="quick-btn" onclick="showPage('features')">
+            <div class="quick-icon">🔧</div>
+            <div class="quick-label">Toggle Fitur</div>
+          </div>
+          <div class="quick-btn" onclick="showPage('security')">
+            <div class="quick-icon">🔑</div>
+            <div class="quick-label">Ganti Kata Kunci</div>
+          </div>
+          <div class="quick-btn" onclick="showPage('broadcast')">
+            <div class="quick-icon">📢</div>
+            <div class="quick-label">Kirim Pengumuman</div>
+          </div>
+          <div class="quick-btn" onclick="showPage('storage')">
+            <div class="quick-icon">🗑️</div>
+            <div class="quick-label">Bersihkan Data</div>
+          </div>
+          <div class="quick-btn" onclick="showPage('logs')">
+            <div class="quick-icon">📋</div>
+            <div class="quick-label">Lihat Log</div>
+          </div>
+          <div class="quick-btn" onclick="showPage('access')">
+            <div class="quick-icon">🔐</div>
+            <div class="quick-label">Hak Akses</div>
+          </div>
+          <div class="quick-btn" onclick="exportAllData()">
+            <div class="quick-icon">📤</div>
+            <div class="quick-label">Export Data</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portal Data Summary -->
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title"><div class="dot"></div>DATA PORTAL (localStorage)</div>
+          <div id="portal-data-summary" style="font-size:12px;color:var(--muted)">Memuat...</div>
+        </div>
+        <div class="card">
+          <div class="card-title"><div class="dot"></div>LOG AKSES TERAKHIR</div>
+          <div id="dash-recent-log" style="font-size:12px;color:var(--muted)">Belum ada log</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ USERS / ANGGOTA ════════════════ -->
+    <div class="page" id="page-users">
+      <div class="page-header">
+        <div class="page-title">👥 Kelola Anggota</div>
+        <div class="page-sub">Daftar anggota yang berhak akses ke Portal MPI</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span><div class="dot" style="display:inline-block;margin-right:8px"></div>DAFTAR ANGGOTA DIIZINKAN</span>
+          <button class="btn btn-sm btn-primary" onclick="openAddUser()">+ Tambah</button>
+        </div>
+        <table class="data-table" id="user-table">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Jabatan</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="user-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>PENGATURAN AKSES KELAS</div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Kelas MPI-I</div>
+            <div class="toggle-desc">Aktifkan tab MPI-I di portal</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-status on" id="stat-kelas1">ON</span>
+            <label class="switch"><input type="checkbox" id="tog-kelas1" checked onchange="toggleFeatureUI('kelas1',this)"><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Kelas MPI-II</div>
+            <div class="toggle-desc">Aktifkan tab MPI-II di portal</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-status on" id="stat-kelas2">ON</span>
+            <label class="switch"><input type="checkbox" id="tog-kelas2" checked onchange="toggleFeatureUI('kelas2',this)"><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">Daftar Terbuka</div>
+            <div class="toggle-desc">Izinkan anggota baru mendaftar sendiri (tanpa approve admin)</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-status off" id="stat-opendaftar">OFF</span>
+            <label class="switch"><input type="checkbox" id="tog-opendaftar" onchange="toggleFeatureUI('opendaftar',this)"><span class="slider"></span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ LOGS ════════════════ -->
+    <div class="page" id="page-logs">
+      <div class="page-header">
+        <div class="page-title">📋 Log Akses</div>
+        <div class="page-sub">Rekam jejak login dan aktivitas di portal</div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-ghost" onclick="filterLog('all')" id="logfilter-all" style="border-color:var(--accent);color:var(--accent)">Semua</button>
+        <button class="btn btn-sm btn-ghost" onclick="filterLog('success')" id="logfilter-success">✅ Login OK</button>
+        <button class="btn btn-sm btn-ghost" onclick="filterLog('fail')" id="logfilter-fail">❌ Gagal</button>
+        <button class="btn btn-sm btn-ghost" onclick="filterLog('action')" id="logfilter-action">⚡ Aksi</button>
+        <button class="btn btn-sm btn-danger" onclick="clearLogs()" style="margin-left:auto">🗑 Hapus Log</button>
+      </div>
+
+      <div class="card">
+        <div id="log-container" style="max-height:500px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- ════════════════ FEATURES ════════════════ -->
+    <div class="page" id="page-features">
+      <div class="page-header">
+        <div class="page-title">🔧 Kelola Fitur</div>
+        <div class="page-sub">Aktifkan atau nonaktifkan fitur secara real-time</div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title"><div class="dot"></div>NAVIGASI UTAMA</div>
+          <div id="feature-toggles-nav"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><div class="dot"></div>FITUR INTERAKTIF</div>
+          <div id="feature-toggles-interactive"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>FITUR ADMIN & LANJUTAN</div>
+        <div id="feature-toggles-advanced"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-md btn-success" onclick="enableAllFeatures()">✅ Aktifkan Semua</button>
+        <button class="btn btn-md btn-danger" onclick="disableAllFeatures()">❌ Nonaktifkan Semua</button>
+        <button class="btn btn-md btn-ghost" onclick="resetFeatures()">↩ Reset Default</button>
+      </div>
+    </div>
+
+    <!-- ════════════════ CONTENT ════════════════ -->
+    <div class="page" id="page-content">
+      <div class="page-header">
+        <div class="page-title">📝 Konten Portal</div>
+        <div class="page-sub">Kelola data tugas, pengumuman, dan informasi kelas</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span><div class="dot" style="display:inline-block;margin-right:8px"></div>PENGUMUMAN</span>
+          <button class="btn btn-sm btn-primary" onclick="openAddPengumuman()">+ Tambah</button>
+        </div>
+        <div id="pengumuman-list">
+          <div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Tidak ada pengumuman</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span><div class="dot" style="display:inline-block;margin-right:8px"></div>TUGAS AKTIF</span>
+          <button class="btn btn-sm btn-primary" onclick="openAddTugas()">+ Tambah</button>
+        </div>
+        <div id="tugas-list">
+          <div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Tidak ada tugas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ ACCESS ════════════════ -->
+    <div class="page" id="page-access">
+      <div class="page-header">
+        <div class="page-title">🔐 Hak Akses</div>
+        <div class="page-sub">Atur siapa bisa melakukan apa di portal</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>IZIN PENGEDITAN</div>
+        <div id="access-toggles"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>MODE PORTAL</div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">🔒 Mode Read-Only</div>
+            <div class="toggle-desc">Semua anggota hanya bisa melihat, tidak bisa tambah/edit/hapus data apapun</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-status off" id="stat-readonly">OFF</span>
+            <label class="switch"><input type="checkbox" id="tog-readonly" onchange="toggleFeatureUI('readonly',this)"><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">🚧 Mode Maintenance</div>
+            <div class="toggle-desc">Portal ditutup sementara — anggota melihat halaman maintenance</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-status off" id="stat-maintenance">OFF</span>
+            <label class="switch"><input type="checkbox" id="tog-maintenance" onchange="toggleFeatureUI('maintenance',this)"><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">🎮 Izin Main Game</div>
+            <div class="toggle-desc">Anggota bisa akses tab Game di portal</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-status on" id="stat-game">ON</span>
+            <label class="switch"><input type="checkbox" id="tog-game" checked onchange="toggleFeatureUI('game',this)"><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">📊 Rekap Bersama</div>
+            <div class="toggle-desc">Anggota dapat melihat rekap nilai & absensi seluruh kelas</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-status on" id="stat-rekap-public">ON</span>
+            <label class="switch"><input type="checkbox" id="tog-rekap-public" checked onchange="toggleFeatureUI('rekap-public',this)"><span class="slider"></span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ STORAGE ════════════════ -->
+    <div class="page" id="page-storage">
+      <div class="page-header">
+        <div class="page-title">💾 Storage & Data</div>
+        <div class="page-sub">Pantau dan kelola data tersimpan di portal</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>PENGGUNAAN STORAGE (localStorage)</div>
+        <div id="storage-breakdown"></div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title"><div class="dot"></div>EXPORT DATA</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Unduh semua data portal sebagai file JSON untuk backup</p>
+          <button class="btn btn-lg btn-success" onclick="exportAllData()">📤 Export Semua Data</button>
+          <div style="height:8px"></div>
+          <button class="btn btn-lg btn-ghost" onclick="exportUsers()">👥 Export Daftar Anggota</button>
+        </div>
+        <div class="card">
+          <div class="card-title"><div class="dot"></div>IMPORT DATA</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Pulihkan data dari file backup JSON</p>
+          <label style="display:block">
+            <div class="input" style="cursor:pointer;text-align:center;color:var(--muted)" onclick="document.getElementById('import-file').click()">📂 Pilih File JSON...</div>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+          </label>
+        </div>
+      </div>
+
+      <div class="card" style="border-color:rgba(239,71,111,0.3)">
+        <div class="card-title" style="color:var(--red)"><div class="dot" style="background:var(--red)"></div>ZONA BERBAHAYA</div>
+        <div class="three-col">
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Hapus semua tugas</div>
+            <button class="btn btn-md btn-danger" style="width:100%" onclick="clearData('mpi_tugas','Semua tugas')">🗑 Hapus Tugas</button>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Hapus semua pengumuman</div>
+            <button class="btn btn-md btn-danger" style="width:100%" onclick="clearData('mpi_pengumuman','Semua pengumuman')">🗑 Hapus Pengumuman</button>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Reset SELURUH data portal</div>
+            <button class="btn btn-md btn-danger" style="width:100%;background:rgba(239,71,111,0.3)" onclick="resetAllData()">💥 Reset Total</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ SECURITY ════════════════ -->
+    <div class="page" id="page-security">
+      <div class="page-header">
+        <div class="page-title">🛡️ Keamanan</div>
+        <div class="page-sub">Kata kunci, akses login, dan proteksi portal</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>KATA KUNCI KELAS (Saat Ini)</div>
+        <div style="margin-bottom:14px">
+          <div class="key-display" id="current-key-display">••••••••••</div>
+          <div style="text-align:center;margin-top:8px">
+            <button class="btn btn-sm btn-ghost" onclick="toggleKeyVis()" id="key-vis-btn">👁 Tampilkan</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="label">Kata Kunci Baru</label>
+          <input class="input" type="password" id="new-key-input" placeholder="Masukkan kata kunci baru..."/>
+        </div>
+        <div class="form-group">
+          <label class="label">Konfirmasi Kata Kunci</label>
+          <input class="input" type="password" id="confirm-key-input" placeholder="Ulangi kata kunci baru..."/>
+        </div>
+        <button class="btn btn-lg btn-primary" onclick="changePassword()">🔑 Ganti Kata Kunci</button>
+        <div style="margin-top:10px;font-size:11px;color:var(--muted)">⚠ Kata kunci tersimpan di kode HTML. Setelah ganti, download ulang file portal yang sudah diperbarui.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>PROTEKSI LOGIN</div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">🔒 Wajib Login Google</div>
+            <div class="toggle-desc">Nonaktifkan = siapa saja bisa masuk tanpa verifikasi nama</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-status on" id="stat-reqgoogle">ON</span>
+            <label class="switch"><input type="checkbox" id="tog-reqgoogle" checked onchange="toggleFeatureUI('reqgoogle',this)"><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">🔑 Wajib Kata Kunci</div>
+            <div class="toggle-desc">Nonaktifkan = anggota terdaftar langsung masuk tanpa kata kunci</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-status on" id="stat-reqkey">ON</span>
+            <label class="switch"><input type="checkbox" id="tog-reqkey" checked onchange="toggleFeatureUI('reqkey',this)"><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">📝 Log Aktivitas Login</div>
+            <div class="toggle-desc">Catat setiap percobaan login ke log akses</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-status on" id="stat-loglogin">ON</span>
+            <label class="switch"><input type="checkbox" id="tog-loglogin" checked onchange="toggleFeatureUI('loglogin',this)"><span class="slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>GOOGLE CLIENT ID</div>
+        <div class="form-group">
+          <label class="label">Client ID</label>
+          <input class="input" type="text" id="google-client-id" placeholder="xxxxxxxx.apps.googleusercontent.com" style="font-family:'JetBrains Mono',monospace;font-size:11px"/>
+        </div>
+        <button class="btn btn-md btn-primary" onclick="saveGoogleClientId()">💾 Simpan Client ID</button>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted)">Perubahan baru aktif setelah file portal di-download ulang.</div>
+      </div>
+    </div>
+
+    <!-- ════════════════ BROADCAST ════════════════ -->
+    <div class="page" id="page-broadcast">
+      <div class="page-header">
+        <div class="page-title">📢 Siaran Pengumuman</div>
+        <div class="page-sub">Kirim pengumuman baru ke seluruh anggota kelas</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>BUAT PENGUMUMAN BARU</div>
+        <div class="form-group">
+          <label class="label">Judul Pengumuman</label>
+          <input class="input" id="bc-judul" placeholder="Judul pengumuman..."/>
+        </div>
+        <div class="form-group">
+          <label class="label">Isi Pengumuman</label>
+          <textarea class="input" id="bc-isi" rows="5" placeholder="Tulis isi pengumuman di sini..." style="resize:vertical;min-height:100px"></textarea>
+        </div>
+        <div class="two-col">
+          <div class="form-group">
+            <label class="label">Kelas Target</label>
+            <select class="input" id="bc-kelas">
+              <option value="all">Semua Kelas</option>
+              <option value="MPI-I">MPI-I</option>
+              <option value="MPI-II">MPI-II</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="label">Prioritas</label>
+            <select class="input" id="bc-prioritas">
+              <option value="normal">Normal</option>
+              <option value="penting">🔴 Penting</option>
+              <option value="info">🔵 Info</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label class="label">Preview</label>
+          <div class="preview-box" id="bc-preview">Preview akan muncul di sini...</div>
+        </div>
+        <button class="btn btn-lg btn-primary" onclick="kirimPengumuman()">📢 Kirim Pengumuman</button>
+      </div>
+    </div>
+
+    <!-- ════════════════ KIRIMAN ANGGOTA ════════════════ -->
+    <div class="page" id="page-kiriman">
+      <div class="page-header">
+        <div class="page-title">📨 Kiriman Anggota</div>
+        <div class="page-sub">Semua data yang dikirim oleh anggota — termasuk identitas pengirim</div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-ghost" onclick="filterKiriman('semua')" id="kfilter-semua" style="border-color:var(--accent);color:var(--accent)">Semua</button>
+        <button class="btn btn-sm btn-ghost" onclick="filterKiriman('tanya')" id="kfilter-tanya">💬 Tanya/Saran</button>
+        <button class="btn btn-sm btn-ghost" onclick="filterKiriman('pengumuman')" id="kfilter-pengumuman">📢 Pengumuman</button>
+        <button class="btn btn-sm btn-ghost" onclick="filterKiriman('tugas')" id="kfilter-tugas">📝 Tugas</button>
+        <button class="btn btn-sm btn-ghost" onclick="filterKiriman('apresiasi')" id="kfilter-apresiasi">⭐ Apresiasi</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>DETAIL KIRIMAN <span id="kiriman-count-label" style="font-weight:400;color:var(--muted)"></span></div>
+        <div id="kiriman-list">
+          <div style="text-align:center;color:var(--muted);padding:32px;font-size:13px;">Memuat data...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ KAS KELAS ════════════════ -->
+    <div class="page" id="page-kas">
+      <div class="page-header">
+        <div class="page-title">💰 Kas Kelas</div>
+        <div class="page-sub">Status pembayaran kas per anggota — siapa sudah bayar, siapa belum</div>
+      </div>
+
+      <!-- Stats Kas -->
+      <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--green)" id="kas-stat-masuk">Rp0</div>
+          <div class="stat-label">Total Terkumpul</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--gold)" id="kas-stat-target">Rp0</div>
+          <div class="stat-label">Target (semua lunas)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--accent)" id="kas-stat-sudah">0</div>
+          <div class="stat-label">Sudah Bayar</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--red)" id="kas-stat-belum">0</div>
+          <div class="stat-label">Belum Lunas</div>
+        </div>
+      </div>
+
+      <!-- Pengaturan Iuran -->
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span><div class="dot" style="display:inline-block;margin-right:8px"></div>PENGATURAN IURAN</span>
+        </div>
+        <div class="two-col">
+          <div class="form-group">
+            <label class="label">Nominal Iuran per Anggota (Rp)</label>
+            <input class="input" type="number" id="kas-nominal-iuran" placeholder="Contoh: 10000" min="0"/>
+          </div>
+          <div class="form-group">
+            <label class="label">Periode / Label</label>
+            <input class="input" id="kas-periode" placeholder="Contoh: Iuran April 2025"/>
+          </div>
+        </div>
+        <button class="btn btn-md btn-primary" onclick="simpanSettingKas()">💾 Simpan Pengaturan Kas</button>
+      </div>
+
+      <!-- Filter + Tambah Pembayaran -->
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span><div class="dot" style="display:inline-block;margin-right:8px"></div>STATUS PEMBAYARAN ANGGOTA</span>
+          <button class="btn btn-sm btn-primary" onclick="openTambahPembayaran()">+ Catat Bayar</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <button class="btn btn-sm btn-ghost" id="kasfilter-semua" onclick="filterKas('semua')" style="border-color:var(--accent);color:var(--accent)">Semua</button>
+          <button class="btn btn-sm btn-ghost" id="kasfilter-sudah" onclick="filterKas('sudah')">✅ Sudah Bayar</button>
+          <button class="btn btn-sm btn-ghost" id="kasfilter-belum" onclick="filterKas('belum')">❌ Belum Bayar</button>
+          <button class="btn btn-sm btn-ghost" id="kasfilter-kurang" onclick="filterKas('kurang')">⚠️ Kurang Bayar</button>
+        </div>
+        <div id="kas-anggota-list"></div>
+      </div>
+
+      <!-- Riwayat Transaksi -->
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span><div class="dot" style="display:inline-block;margin-right:8px"></div>RIWAYAT TRANSAKSI KAS</span>
+          <button class="btn btn-sm btn-danger" onclick="hapusSemuaTransaksiKas()">🗑 Hapus Semua</button>
+        </div>
+        <div id="kas-transaksi-list" style="max-height:350px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- ════════════════ SETTINGS ════════════════ -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div class="page-title">⚙️ Pengaturan</div>
+        <div class="page-sub">Konfigurasi umum admin panel</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>INFORMASI ADMIN</div>
+        <div class="form-group">
+          <label class="label">Nama Admin</label>
+          <input class="input" id="admin-name" placeholder="Nama admin..." value="Kosma / Admin Portal"/>
+        </div>
+        <div class="form-group">
+          <label class="label">Password Admin Panel</label>
+          <input class="input" type="password" id="admin-pw" placeholder="Password untuk buka admin panel..."/>
+        </div>
+        <button class="btn btn-md btn-primary" onclick="saveAdminSettings()">💾 Simpan</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>PORTAL INFO</div>
+        <div style="font-size:12px;color:var(--muted);line-height:2">
+          <div>🎓 Portal Kelas MPI · STAI Al-Badar Cipulus</div>
+          <div>📦 Versi: 1.0.0 (Offline First)</div>
+          <div>💾 Storage: localStorage + IndexedDB</div>
+          <div>🔐 Auth: Google OAuth 2.0 + Kata Kunci</div>
+          <div>🎮 Game: Zombie Run + Ludo Online</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>PINTASAN KEYBOARD</div>
+        <div style="font-size:12px;color:var(--muted);line-height:2;font-family:'JetBrains Mono',monospace">
+          <div><span style="color:var(--accent)">Alt+D</span> → Dashboard</div>
+          <div><span style="color:var(--accent)">Alt+U</span> → Anggota</div>
+          <div><span style="color:var(--accent)">Alt+F</span> → Fitur</div>
+          <div><span style="color:var(--accent)">Alt+S</span> → Keamanan</div>
+          <div><span style="color:var(--accent)">Alt+L</span> → Log</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ── MODAL ── -->
+<div id="modal-bg" class="hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<!-- ── TOAST ── -->
+<div id="toast"><span class="toast-icon" id="toast-icon">✅</span><span id="toast-msg">OK</span></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// ADMIN DATA & CONFIG
+// ═══════════════════════════════════════════════
+
+const ADMIN_KEY = 'mpi_admin_panel';
+const LOG_KEY   = 'mpi_admin_logs';
+
+// Semua kunci localStorage yang digunakan portal
+const PORTAL_KEYS = {
+  mpi_tugas:       'Tugas',
+  mpi_pengumuman:  'Pengumuman',
+  mpi_presentasi:  'Presentasi',
+  mpi_anggota:     'Anggota',
+  mpi_kelas:       'Kelas Aktif',
+  mpi_dokumentasi: 'Dokumentasi',
+  mpi_rps:         'RPS Matkul',
+  mpi_perpustakaan:'Perpustakaan',
+  mpi_absensi:     'Absensi',
+  mpi_nilai:       'Nilai',
+  mpi_kas:         'Kas',
+  mpi_apresiasi:   'Apresiasi',
+  mpi_countdown:   'Countdown',
+  mpi_polling:     'Polling',
+  mpi_tanya:       'Tanya Jawab',
+  mpi_kalender:    'Kalender',
+  mpi_rekap:       'Rekap',
+  mpi_kuis:        'Kuis',
+  mpi_poin:        'Poin',
+  mpi_kelompok:    'Kelompok',
+};
+
+// Kata kunci kelas (dibaca dari portal jika ada)
+let KATA_KUNCI_PORTAL = 'MPIstudies';
+let GOOGLE_CLIENT_ID_PORTAL = '1001885707470-li98e0ic6jua7sbc4uirp7120latrl0k.apps.googleusercontent.com';
+
+// Default anggota diizinkan
+let ANGGOTA_DIIZINKAN = [
+  { nama:'Aep Mulyana', jabatan:'Kosma' },
+  { nama:'Aldi Rizaldi', jabatan:'Wakil Kosma' },
+  { nama:'M. Zian Mustopa', jabatan:'PJ MK' },
+  { nama:'M. Azhar Alif Faozan', jabatan:'PJ MK' },
+  { nama:'M. Azhar Najmuddin', jabatan:'PJ MK' },
+  { nama:'M. Faisal', jabatan:'PJ MK' },
+  { nama:'Iwan Supriatna', jabatan:'PJ MK' },
+  { nama:'M. Ramli', jabatan:'PJ MK' },
+  { nama:'Siva Julianti', jabatan:'Bendahara' },
+  { nama:'Laila Nurjalila', jabatan:'Sekretaris' },
+  { nama:'Neng Zaqiah', jabatan:'PJ MK' },
+  { nama:'Hidayatul Fahmi', jabatan:'PJ MK' },
+];
+
+// Daftar fitur portal yang bisa di-toggle
+const FEATURES_NAV = [
+  { id:'jadwal',     label:'Tab Jadwal',       desc:'Halaman jadwal kuliah', default:true },
+  { id:'materi',     label:'Tab Materi',        desc:'Halaman materi & RPS', default:true },
+  { id:'tugas',      label:'Tab Tugas',         desc:'Daftar tugas & deadline', default:true },
+  { id:'absensi',    label:'Tab Absensi',       desc:'Rekap absensi kelas', default:true },
+  { id:'nilai',      label:'Tab Nilai',         desc:'Rekap nilai matkul', default:true },
+  { id:'kalender',   label:'Tab Kalender',      desc:'Kalender akademik', default:true },
+];
+const FEATURES_INTERACTIVE = [
+  { id:'polling',    label:'Polling',           desc:'Fitur voting/polling kelas', default:true },
+  { id:'tanya',      label:'Tanya Jawab',       desc:'Q&A antar anggota', default:true },
+  { id:'apresiasi',  label:'Apresiasi',         desc:'Ucapan apresiasi', default:true },
+  { id:'kuis',       label:'Kuis Online',       desc:'Kuis interaktif kelas', default:true },
+  { id:'leaderboard',label:'Leaderboard',       desc:'Papan peringkat poin', default:true },
+];
+const FEATURES_ADVANCED = [
+  { id:'dokumentasi',label:'Dokumentasi/Foto', desc:'Upload & lihat foto kelas', default:true },
+  { id:'perpustakaan',label:'Perpustakaan',    desc:'E-book & file belajar', default:true },
+  { id:'kas',        label:'Kas Kelas',        desc:'Pencatatan kas & keuangan', default:true },
+  { id:'rekap',      label:'Rekap Lengkap',    desc:'Rekap nilai & absensi lengkap', default:true },
+  { id:'kelompok',   label:'Kelompok',         desc:'Pembagian kelompok tugas', default:true },
+  { id:'game',       label:'Game',             desc:'Mini game hiburan kelas', default:true },
+];
+const SEMUA_JABATAN = ['Kosma','Wakil Kosma','Sekretaris','Bendahara','PJ MK','Anggota'];
+
+const ACCESS_TOGGLES = [
+  { id:'edit-tugas',      label:'Edit Tugas',        desc:'Tambah/hapus/edit tugas kelas',         defaultJabatan:['Kosma','Wakil Kosma','Sekretaris','Bendahara','PJ MK','Anggota'] },
+  { id:'edit-pengumuman', label:'Edit Pengumuman',   desc:'Buat & hapus pengumuman',                defaultJabatan:['Kosma','Wakil Kosma','Sekretaris'] },
+  { id:'edit-kalender',   label:'Edit Kalender',     desc:'Tambah event kalender akademik',          defaultJabatan:['Kosma','Wakil Kosma','Sekretaris','Bendahara','PJ MK','Anggota'] },
+  { id:'edit-absensi',    label:'Edit Absensi',      desc:'Input & hapus absensi kelas',             defaultJabatan:['Kosma','Wakil Kosma','Sekretaris'] },
+  { id:'edit-nilai',      label:'Edit Nilai',        desc:'Input nilai per mata kuliah',             defaultJabatan:['Kosma','Wakil Kosma','PJ MK'] },
+  { id:'edit-kas',        label:'Edit Kas',          desc:'Catat transaksi kas kelas',               defaultJabatan:['Bendahara','Kosma'] },
+  { id:'edit-profil',     label:'Edit Profil Anggota', desc:'Update data profil anggota',            defaultJabatan:['Kosma','Wakil Kosma','Sekretaris','Bendahara','PJ MK','Anggota'] },
+  { id:'upload-foto',     label:'Upload Foto',       desc:'Upload foto ke album dokumentasi',        defaultJabatan:['Kosma','Wakil Kosma','Sekretaris','Bendahara','PJ MK','Anggota'] },
+  { id:'upload-ebook',    label:'Upload E-Book',     desc:'Upload file ke perpustakaan kelas',       defaultJabatan:['Kosma','Wakil Kosma','Sekretaris','Bendahara','PJ MK','Anggota'] },
+  { id:'edit-polling',    label:'Buat Polling',      desc:'Buat & hapus polling kelas',              defaultJabatan:['Kosma','Wakil Kosma','Sekretaris'] },
+  { id:'edit-rekap',      label:'Edit Rekap Kuliah', desc:'Catat rekap pertemuan & materi',          defaultJabatan:['Kosma','Wakil Kosma','Sekretaris','PJ MK'] },
+  { id:'edit-apresiasi',  label:'Beri Apresiasi',    desc:'Kirim apresiasi ke anggota',              defaultJabatan:['Kosma','Wakil Kosma','Sekretaris','Bendahara','PJ MK','Anggota'] },
+  { id:'edit-kelompok',   label:'Buat Kelompok',     desc:'Buat & acak pembagian kelompok',          defaultJabatan:['Kosma','Wakil Kosma','Sekretaris','PJ MK'] },
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let adminState = {
+  features: {},
+  access: {},
+  settings: {},
+  anggota: [...ANGGOTA_DIIZINKAN],
+};
+
+function loadAdminState() {
+  const saved = localStorage.getItem(ADMIN_KEY);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      adminState = { ...adminState, ...parsed };
+      if (parsed.anggota) adminState.anggota = parsed.anggota;
+    } catch(e) {}
+  }
+  // Set default feature states if not set
+  [...FEATURES_NAV, ...FEATURES_INTERACTIVE, ...FEATURES_ADVANCED].forEach(f => {
+    if (adminState.features[f.id] === undefined) adminState.features[f.id] = f.default;
+  });
+  ACCESS_TOGGLES.forEach(a => {
+    if (adminState.access[a.id] === undefined) {
+      adminState.access[a.id] = a.defaultJabatan;
+    }
+  });
+
+  // ── SYNC SEMUA TOGGLE STATIS DARI STATE ────────────────────────
+  // Toggle-toggle yang hardcoded di HTML (checked/unchecked) harus
+  // disinkronkan dengan nilai yang tersimpan di adminState.features
+  // agar perubahan dari admin bersifat permanen (tidak kembali ke default HTML).
+  const staticToggles = [
+    'kelas1','kelas2','opendaftar',
+    'readonly','maintenance','game','rekap-public',
+    'reqgoogle','reqkey','loglogin'
+  ];
+  staticToggles.forEach(id => {
+    // Jika state sudah tersimpan, pakai state. Jika belum, pakai default dari HTML
+    const tog = document.getElementById('tog-' + id);
+    const stat = document.getElementById('stat-' + id);
+    if (tog && adminState.features[id] !== undefined) {
+      const isOn = adminState.features[id];
+      tog.checked = isOn;
+      if (stat) {
+        stat.textContent = isOn ? 'ON' : 'OFF';
+        stat.className = 'toggle-status ' + (isOn ? 'on' : 'off');
+      }
+    } else if (tog && adminState.features[id] === undefined) {
+      // Belum tersimpan → baca dari HTML, simpan ke state supaya konsisten ke depannya
+      adminState.features[id] = tog.checked;
+    }
+  });
+}
+
+function saveAdminState() {
+  localStorage.setItem(ADMIN_KEY, JSON.stringify(adminState));
+  // Broadcast permission terbaru agar portal bisa baca
+  localStorage.setItem('mpi_permissions', JSON.stringify(adminState.access));
+}
+
+// ═══════════════════════════════════════════════
+// LOGGING
+// ═══════════════════════════════════════════════
+let adminLogs = [];
+
+function loadLogs() {
+  try {
+    const l = localStorage.getItem(LOG_KEY);
+    if (l) adminLogs = JSON.parse(l);
+  } catch(e) { adminLogs = []; }
+}
+
+function saveLog(type, msg) {
+  const entry = {
+    type, msg,
+    time: new Date().toLocaleTimeString('id', { hour:'2-digit', minute:'2-digit', second:'2-digit' }),
+    date: new Date().toLocaleDateString('id', { day:'2-digit', month:'short' })
+  };
+  adminLogs.unshift(entry);
+  if (adminLogs.length > 200) adminLogs = adminLogs.slice(0, 200);
+  localStorage.setItem(LOG_KEY, JSON.stringify(adminLogs));
+  updateLogBadge();
+}
+
+function updateLogBadge() {
+  const badge = document.getElementById('badge-logs');
+  if (badge) badge.textContent = adminLogs.length;
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function showPage(id, pushHistory = true) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id)?.classList.add('active');
+  document.querySelector(`.nav-item[onclick="showPage('${id}')"]`)?.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'users') renderUsers();
+  if (id === 'logs') renderLogs();
+  if (id === 'features') renderFeatures();
+  if (id === 'content') renderContent();
+  if (id === 'access') renderAccess();
+  if (id === 'storage') renderStorage();
+  if (id === 'security') renderSecurity();
+  if (id === 'kiriman') renderKiriman();
+  if (id === 'kas') renderKas();
+  if (pushHistory) history.pushState({ page: id }, '', '#' + id);
+}
+
+// Tombol Back HP → navigasi antar halaman, bukan keluar
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.page) {
+    showPage(e.state.page, false);
+  } else {
+    window.location.href = 'index.html';
+  }
+});
+
+// Tombol ✕ Tutup
+function tutupPanel() {
+  if (window.self !== window.top) {
+    try { window.parent.postMessage({ action: 'closeAdminPanel' }, '*'); } catch(e) {}
+    try { if (typeof window.parent.closeAdminPanel === 'function') { window.parent.closeAdminPanel(); return; } } catch(e) {}
+  }
+  window.location.href = 'index.html';
+}
+
+// ═══════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════
+function updateClock() {
+  const el = document.getElementById('topbar-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('id', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+let toastTimer;
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  const icons = { ok:'✅', warn:'⚠️', error:'❌', info:'ℹ️' };
+  document.getElementById('toast-icon').textContent = icons[type] || '✅';
+  document.getElementById('toast-msg').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════
+function openModal(html) {
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-bg').classList.remove('hidden');
+}
+function closeModal() {
+  document.getElementById('modal-bg').classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function renderDashboard() {
+  // Count data
+  const tugas = tryParse('mpi_tugas', []);
+  const pengumuman = tryParse('mpi_pengumuman', []);
+  document.getElementById('stat-anggota').textContent = adminState.anggota.length;
+  document.getElementById('stat-tugas').textContent = tugas.length;
+  document.getElementById('stat-pengumuman').textContent = pengumuman.length;
+
+  // Storage
+  let total = 0;
+  for (let k in localStorage) {
+    if (localStorage.hasOwnProperty(k)) total += (localStorage.getItem(k) || '').length;
+  }
+  document.getElementById('stat-storage').textContent = (total / 1024).toFixed(1);
+
+  // Portal data summary
+  const el = document.getElementById('portal-data-summary');
+  let html = '';
+  for (const [key, label] of Object.entries(PORTAL_KEYS)) {
+    const val = localStorage.getItem(key);
+    const size = val ? (val.length / 1024).toFixed(1) : 0;
+    const count = val ? (() => { try { const p = JSON.parse(val); return Array.isArray(p) ? p.length : (typeof p === 'object' ? Object.keys(p).length : 1); } catch(e) { return '—'; } })() : 0;
+    html += `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(30,45,61,0.4)">
+      <span>${label}</span>
+      <span style="color:${val ? 'var(--text)' : 'var(--dim)'};font-family:'JetBrains Mono',monospace;font-size:11px">${val ? count + ' item · ' + size + 'KB' : '—'}</span>
+    </div>`;
+  }
+  el.innerHTML = html || '<div style="color:var(--dim)">Tidak ada data</div>';
+
+  // Recent log
+  const logEl = document.getElementById('dash-recent-log');
+  if (adminLogs.length === 0) {
+    logEl.innerHTML = '<div style="color:var(--dim);text-align:center;padding:10px">Belum ada log</div>';
+  } else {
+    logEl.innerHTML = adminLogs.slice(0, 5).map(l => `
+      <div class="log-entry">
+        <div class="log-dot ${l.type}"></div>
+        <div style="flex:1">
+          <div style="color:var(--text)">${l.msg}</div>
+          <div style="color:var(--dim);font-size:10px;font-family:'JetBrains Mono',monospace">${l.date} ${l.time}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// USERS
+// ═══════════════════════════════════════════════
+function renderUsers() {
+  document.getElementById('badge-users').textContent = adminState.anggota.length;
+  const colors = ['#00d4ff','#06d6a0','#ffd166','#ef476f','#a855f7','#ff9f43'];
+  const tbody = document.getElementById('user-tbody');
+  tbody.innerHTML = adminState.anggota.map((u, i) => {
+    const color = colors[i % colors.length];
+    const initials = u.nama.split(' ').map(w=>w[0]).slice(0,2).join('');
+    const jabColor = { 'Kosma':'gold', 'Sekretaris':'sekre', 'Bendahara':'green', 'Wakil Kosma':'kosma' }[u.jabatan] || 'active';
+    return `<tr>
+      <td>
+        <div class="user-row">
+          <div class="user-av" style="background:${color}22;color:${color}">${initials}</div>
+          <span>${u.nama}</span>
+        </div>
+      </td>
+      <td><span class="badge ${jabColor}">${u.jabatan}</span></td>
+      <td><span class="badge active">Aktif</span></td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-ghost" onclick="editUser(${i})">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="removeUser(${i})">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openAddUser() {
+  openModal(`
+    <div class="modal-title">➕ Tambah Anggota</div>
+    <div class="form-group">
+      <label class="label">Nama (harus cocok dengan akun Google)</label>
+      <input class="input" id="m-nama" placeholder="Contoh: Budi Santoso"/>
+    </div>
+    <div class="form-group">
+      <label class="label">Jabatan</label>
+      <select class="input" id="m-jabatan">
+        <option>PJ MK</option><option>Kosma</option><option>Wakil Kosma</option>
+        <option>Sekretaris</option><option>Bendahara</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-lg btn-primary" onclick="addUser()" style="flex:1">Tambah</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function addUser() {
+  const nama = document.getElementById('m-nama').value.trim();
+  const jabatan = document.getElementById('m-jabatan').value;
+  if (!nama) { toast('Masukkan nama terlebih dahulu', 'warn'); return; }
+  adminState.anggota.push({ nama, jabatan });
+  saveAdminState();
+  saveLog('action', `Tambah anggota: ${nama}`);
+  closeModal();
+  renderUsers();
+  toast(`${nama} ditambahkan ke daftar anggota`);
+}
+
+function editUser(idx) {
+  const u = adminState.anggota[idx];
+  openModal(`
+    <div class="modal-title">✏️ Edit Anggota</div>
+    <div class="form-group">
+      <label class="label">Nama</label>
+      <input class="input" id="m-edit-nama" value="${escHtml(u.nama)}"/>
+    </div>
+    <div class="form-group">
+      <label class="label">Jabatan</label>
+      <select class="input" id="m-edit-jabatan">
+        ${['PJ MK','Kosma','Wakil Kosma','Sekretaris','Bendahara'].map(j=>`<option${j===u.jabatan?' selected':''}>${j}</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-lg btn-primary" onclick="saveEditUser(${idx})" style="flex:1">Simpan</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function saveEditUser(idx) {
+  const nama = document.getElementById('m-edit-nama').value.trim();
+  const jabatan = document.getElementById('m-edit-jabatan').value;
+  if (!nama) { toast('Nama tidak boleh kosong', 'warn'); return; }
+  const old = adminState.anggota[idx].nama;
+  adminState.anggota[idx] = { nama, jabatan };
+  saveAdminState();
+  saveLog('action', `Edit anggota: ${old} → ${nama}`);
+  closeModal();
+  renderUsers();
+  toast(`Data anggota diperbarui`);
+}
+
+function removeUser(idx) {
+  const nama = adminState.anggota[idx].nama;
+  openModal(`
+    <div class="modal-title">🗑 Hapus Anggota</div>
+    <div class="confirm-box">Yakin ingin menghapus <strong>${escHtml(nama)}</strong> dari daftar anggota? Mereka tidak bisa login lagi ke portal.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-lg btn-danger" onclick="confirmRemoveUser(${idx})" style="flex:1">Ya, Hapus</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function confirmRemoveUser(idx) {
+  const nama = adminState.anggota[idx].nama;
+  adminState.anggota.splice(idx, 1);
+  saveAdminState();
+  saveLog('action', `Hapus anggota: ${nama}`);
+  closeModal();
+  renderUsers();
+  toast(`${nama} dihapus dari daftar`, 'warn');
+}
+
+// ═══════════════════════════════════════════════
+// LOGS
+// ═══════════════════════════════════════════════
+let currentLogFilter = 'all';
+
+function renderLogs() {
+  const filtered = currentLogFilter === 'all' ? adminLogs : adminLogs.filter(l => l.type === currentLogFilter);
+  const el = document.getElementById('log-container');
+  if (filtered.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Tidak ada log</div>';
+    return;
+  }
+  el.innerHTML = filtered.map(l => `
+    <div class="log-entry">
+      <div style="flex-shrink:0">
+        <div class="log-time">${l.date}<br>${l.time}</div>
+      </div>
+      <div class="log-dot ${l.type}"></div>
+      <div>${l.msg}</div>
+    </div>`).join('');
+}
+
+function filterLog(type) {
+  currentLogFilter = type;
+  document.querySelectorAll('[id^="logfilter-"]').forEach(b => { b.style.borderColor = ''; b.style.color = ''; });
+  const btn = document.getElementById('logfilter-' + type);
+  if (btn) { btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; }
+  renderLogs();
+}
+
+function clearLogs() {
+  openModal(`
+    <div class="modal-title">🗑 Hapus Semua Log?</div>
+    <div class="confirm-box">Semua ${adminLogs.length} entri log akan dihapus permanen.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-lg btn-danger" onclick="confirmClearLogs()" style="flex:1">Ya, Hapus</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function confirmClearLogs() {
+  adminLogs = [];
+  localStorage.removeItem(LOG_KEY);
+  closeModal();
+  updateLogBadge();
+  renderLogs();
+  toast('Log berhasil dihapus', 'warn');
+}
+
+// ═══════════════════════════════════════════════
+// FEATURES
+// ═══════════════════════════════════════════════
+function renderFeatures() {
+  renderFeatureGroup('feature-toggles-nav', FEATURES_NAV);
+  renderFeatureGroup('feature-toggles-interactive', FEATURES_INTERACTIVE);
+  renderFeatureGroup('feature-toggles-advanced', FEATURES_ADVANCED);
+}
+
+function renderFeatureGroup(containerId, features) {
+  document.getElementById(containerId).innerHTML = features.map(f => {
+    const on = adminState.features[f.id] !== false;
+    return `<div class="toggle-row">
+      <div class="toggle-info">
+        <div class="toggle-label">${f.label}</div>
+        <div class="toggle-desc">${f.desc}</div>
+      </div>
+      <div class="toggle-wrap">
+        <span class="toggle-status ${on?'on':'off'}" id="feat-stat-${f.id}">${on?'ON':'OFF'}</span>
+        <label class="switch">
+          <input type="checkbox" id="feat-tog-${f.id}" ${on?'checked':''} onchange="toggleFeature('${f.id}',this)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleFeature(id, el) {
+  adminState.features[id] = el.checked;
+  const stat = document.getElementById('feat-stat-' + id);
+  if (stat) { stat.textContent = el.checked ? 'ON' : 'OFF'; stat.className = 'toggle-status ' + (el.checked ? 'on' : 'off'); }
+  saveAdminState();
+  saveLog('action', `Fitur "${id}" ${el.checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+  toast(`Fitur ${id}: ${el.checked ? 'ON ✅' : 'OFF ❌'}`);
+}
+
+function toggleFeatureUI(id, el) {
+  const stat = document.getElementById('stat-' + id);
+  if (stat) { stat.textContent = el.checked ? 'ON' : 'OFF'; stat.className = 'toggle-status ' + (el.checked ? 'on' : 'off'); }
+  adminState.features[id] = el.checked;
+  saveAdminState();
+  saveLog('action', `Setting "${id}" ${el.checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+  toast(`${id}: ${el.checked ? 'ON ✅' : 'OFF ❌'}`);
+}
+
+function enableAllFeatures() {
+  [...FEATURES_NAV, ...FEATURES_INTERACTIVE, ...FEATURES_ADVANCED].forEach(f => {
+    adminState.features[f.id] = true;
+    const tog = document.getElementById('feat-tog-' + f.id);
+    const stat = document.getElementById('feat-stat-' + f.id);
+    if (tog) tog.checked = true;
+    if (stat) { stat.textContent = 'ON'; stat.className = 'toggle-status on'; }
+  });
+  saveAdminState();
+  saveLog('action', 'Semua fitur diaktifkan');
+  toast('Semua fitur diaktifkan ✅');
+}
+
+function disableAllFeatures() {
+  openModal(`
+    <div class="modal-title">❌ Nonaktifkan Semua?</div>
+    <div class="confirm-box">Semua fitur akan dinonaktifkan. Anggota tidak bisa mengakses tab manapun.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-lg btn-danger" onclick="confirmDisableAll()" style="flex:1">Ya, Nonaktifkan</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function confirmDisableAll() {
+  [...FEATURES_NAV, ...FEATURES_INTERACTIVE, ...FEATURES_ADVANCED].forEach(f => {
+    adminState.features[f.id] = false;
+    const tog = document.getElementById('feat-tog-' + f.id);
+    const stat = document.getElementById('feat-stat-' + f.id);
+    if (tog) tog.checked = false;
+    if (stat) { stat.textContent = 'OFF'; stat.className = 'toggle-status off'; }
+  });
+  saveAdminState();
+  saveLog('action', 'Semua fitur dinonaktifkan');
+  closeModal();
+  toast('Semua fitur dinonaktifkan ❌', 'warn');
+}
+
+function resetFeatures() {
+  [...FEATURES_NAV, ...FEATURES_INTERACTIVE, ...FEATURES_ADVANCED].forEach(f => {
+    adminState.features[f.id] = f.default;
+  });
+  saveAdminState();
+  renderFeatures();
+  saveLog('action', 'Fitur direset ke default');
+  toast('Fitur direset ke default ↩');
+}
+
+// ═══════════════════════════════════════════════
+// CONTENT
+// ═══════════════════════════════════════════════
+function renderContent() {
+  // Pengumuman
+  const pengumuman = tryParse('mpi_pengumuman', []);
+  const pEl = document.getElementById('pengumuman-list');
+  if (pengumuman.length === 0) {
+    pEl.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Tidak ada pengumuman</div>';
+  } else {
+    pEl.innerHTML = pengumuman.map((p, i) => `
+      <div class="item-row">
+        <div class="item-text">
+          <div class="item-title">${escHtml(p.judul || p.teks || '–')}</div>
+          <div class="item-meta">${p.tanggal ? new Date(p.tanggal).toLocaleDateString('id') : '–'} · ${escHtml(p.kelas || 'Semua')}</div>
+        </div>
+        <div class="item-actions">
+          <button class="btn btn-sm btn-danger" onclick="deletePengumuman(${i})">🗑</button>
+        </div>
+      </div>`).join('');
+  }
+
+  // Tugas
+  const tugas = tryParse('mpi_tugas', []);
+  const tEl = document.getElementById('tugas-list');
+  if (tugas.length === 0) {
+    tEl.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Tidak ada tugas</div>';
+  } else {
+    tEl.innerHTML = tugas.map((t, i) => `
+      <div class="item-row">
+        <div class="item-text">
+          <div class="item-title">${escHtml(t.judul || t.nama || '–')}</div>
+          <div class="item-meta">${t.deadline ? 'Deadline: ' + new Date(t.deadline).toLocaleDateString('id') : '–'} · ${escHtml(t.matkul || '–')} · ${t.selesai ? '✅ Selesai' : '⏳ Belum'}</div>
+        </div>
+        <div class="item-actions">
+          <button class="btn btn-sm btn-danger" onclick="deleteTugas(${i})">🗑</button>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function deletePengumuman(idx) {
+  const data = tryParse('mpi_pengumuman', []);
+  const judul = data[idx]?.judul || data[idx]?.teks || 'Pengumuman';
+  data.splice(idx, 1);
+  localStorage.setItem('mpi_pengumuman', JSON.stringify(data));
+  saveLog('action', `Hapus pengumuman: ${judul}`);
+  toast('Pengumuman dihapus', 'warn');
+  renderContent();
+}
+
+function deleteTugas(idx) {
+  const data = tryParse('mpi_tugas', []);
+  const judul = data[idx]?.judul || data[idx]?.nama || 'Tugas';
+  data.splice(idx, 1);
+  localStorage.setItem('mpi_tugas', JSON.stringify(data));
+  saveLog('action', `Hapus tugas: ${judul}`);
+  toast('Tugas dihapus', 'warn');
+  renderContent();
+}
+
+function openAddPengumuman() {
+  openModal(`
+    <div class="modal-title">📢 Tambah Pengumuman</div>
+    <div class="form-group">
+      <label class="label">Judul</label>
+      <input class="input" id="m-p-judul" placeholder="Judul pengumuman..."/>
+    </div>
+    <div class="form-group">
+      <label class="label">Isi</label>
+      <textarea class="input" id="m-p-isi" rows="3" placeholder="Isi pengumuman..." style="resize:vertical"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="label">Kelas</label>
+      <select class="input" id="m-p-kelas">
+        <option value="">Semua</option><option value="MPI-I">MPI-I</option><option value="MPI-II">MPI-II</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-lg btn-primary" onclick="savePengumuman()" style="flex:1">Simpan</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function savePengumuman() {
+  const judul = document.getElementById('m-p-judul').value.trim();
+  const teks = document.getElementById('m-p-isi').value.trim();
+  const kelas = document.getElementById('m-p-kelas').value;
+  if (!judul && !teks) { toast('Isi pengumuman terlebih dahulu', 'warn'); return; }
+  const data = tryParse('mpi_pengumuman', []);
+  data.unshift({ id: Date.now(), judul, teks, kelas: kelas || 'Semua', tanggal: new Date().toISOString() });
+  localStorage.setItem('mpi_pengumuman', JSON.stringify(data));
+  saveLog('action', `Admin tambah pengumuman: ${judul}`);
+  closeModal();
+  renderContent();
+  toast('Pengumuman ditambahkan ✅');
+}
+
+function openAddTugas() {
+  openModal(`
+    <div class="modal-title">📋 Tambah Tugas</div>
+    <div class="form-group">
+      <label class="label">Judul Tugas</label>
+      <input class="input" id="m-t-judul" placeholder="Nama tugas..."/>
+    </div>
+    <div class="form-group">
+      <label class="label">Mata Kuliah</label>
+      <input class="input" id="m-t-matkul" placeholder="Nama matkul..."/>
+    </div>
+    <div class="form-group">
+      <label class="label">Deadline</label>
+      <input class="input" type="date" id="m-t-deadline"/>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-lg btn-primary" onclick="saveTugas()" style="flex:1">Simpan</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function saveTugas() {
+  const judul = document.getElementById('m-t-judul').value.trim();
+  const matkul = document.getElementById('m-t-matkul').value.trim();
+  const deadline = document.getElementById('m-t-deadline').value;
+  if (!judul) { toast('Masukkan judul tugas', 'warn'); return; }
+  const data = tryParse('mpi_tugas', []);
+  data.unshift({ id: Date.now(), judul, matkul, deadline, selesai: false, createdAt: new Date().toISOString() });
+  localStorage.setItem('mpi_tugas', JSON.stringify(data));
+  saveLog('action', `Admin tambah tugas: ${judul}`);
+  closeModal();
+  renderContent();
+  toast('Tugas ditambahkan ✅');
+}
+
+// ═══════════════════════════════════════════════
+// ACCESS
+// ═══════════════════════════════════════════════
+function renderAccess() {
+  const el = document.getElementById('access-toggles');
+  el.innerHTML = ACCESS_TOGGLES.map(a => {
+    const allowed = Array.isArray(adminState.access[a.id]) ? adminState.access[a.id] : (adminState.access[a.id] ? a.defaultJabatan : []);
+    const chips = SEMUA_JABATAN.map(j => {
+      const isOn = allowed.includes(j);
+      const color = {
+        'Kosma':'#ffd166','Wakil Kosma':'#ff9f43','Sekretaris':'#a855f7',
+        'Bendahara':'#06d6a0','PJ MK':'#00d4ff','Anggota':'#6b8299'
+      }[j] || '#6b8299';
+      return `<button onclick="toggleJabatanAccess('${a.id}','${j}',this)"
+        style="padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;transition:all .15s;
+          background:${isOn ? color+'22' : 'transparent'};
+          border:1px solid ${isOn ? color : '#1e2d3d'};
+          color:${isOn ? color : '#374151'}"
+        data-on="${isOn}">${j}</button>`;
+    }).join('');
+    const anyOn = allowed.length > 0;
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${a.label}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${a.desc}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0;margin-left:12px">
+          <button onclick="setAllJabatan('${a.id}',true)" style="font-size:10px;padding:3px 8px;border-radius:5px;background:rgba(6,214,160,.12);border:1px solid rgba(6,214,160,.3);color:var(--green);cursor:pointer">Semua</button>
+          <button onclick="setAllJabatan('${a.id}',false)" style="font-size:10px;padding:3px 8px;border-radius:5px;background:rgba(239,71,111,.1);border:1px solid rgba(239,71,111,.25);color:var(--red);cursor:pointer">Tidak ada</button>
+        </div>
+      </div>
+      <div id="chips-${a.id}" style="display:flex;flex-wrap:wrap;gap:6px">${chips}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleJabatanAccess(featureId, jabatan, btn) {
+  let allowed = Array.isArray(adminState.access[featureId]) ? [...adminState.access[featureId]] : [];
+  const isOn = btn.dataset.on === 'true';
+  if (isOn) {
+    allowed = allowed.filter(j => j !== jabatan);
+  } else {
+    if (!allowed.includes(jabatan)) allowed.push(jabatan);
+  }
+  adminState.access[featureId] = allowed;
+  saveAdminState();
+  saveAndBroadcastAccess();
+  saveLog('action', `Hak akses "${featureId}" — jabatan "${jabatan}" ${isOn ? 'dilepas' : 'diberikan'}`);
+  toast(`${jabatan}: ${isOn ? 'tidak bisa' : 'bisa'} ${featureId.replace('edit-','')}`);
+  renderAccess();
+}
+
+function setAllJabatan(featureId, on) {
+  adminState.access[featureId] = on ? [...SEMUA_JABATAN] : [];
+  saveAdminState();
+  saveAndBroadcastAccess();
+  saveLog('action', `Hak akses "${featureId}" diset ${on ? 'semua jabatan' : 'tidak ada'}`);
+  toast(`${featureId}: ${on ? 'semua jabatan diizinkan' : 'semua diblokir'}`);
+  renderAccess();
+}
+
+function saveAndBroadcastAccess() {
+  // Simpan permission ke localStorage agar index.html bisa baca
+  localStorage.setItem('mpi_permissions', JSON.stringify(adminState.access));
+}
+
+// ═══════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════
+function renderStorage() {
+  const el = document.getElementById('storage-breakdown');
+  let html = '';
+  let totalKB = 0;
+  for (const [key, label] of Object.entries(PORTAL_KEYS)) {
+    const val = localStorage.getItem(key);
+    const kb = val ? val.length / 1024 : 0;
+    totalKB += kb;
+    const pct = Math.min(100, (kb / 100) * 100);
+    const color = kb > 50 ? 'var(--red)' : kb > 20 ? 'var(--orange)' : 'var(--green)';
+    html += `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+        <span style="color:var(--text)">${label}</span>
+        <span style="font-family:'JetBrains Mono',monospace;color:${val?'var(--muted)':'var(--dim)'}">
+          ${val ? kb.toFixed(2) + ' KB' : '—'}
+        </span>
+      </div>
+      <div class="storage-bar-wrap">
+        <div class="storage-bar" style="width:${pct}%;background:${color}"></div>
+      </div>
+    </div>`;
+  }
+  html += `<div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);font-size:12px;font-weight:600">
+    <span>Total</span>
+    <span style="font-family:'JetBrains Mono',monospace;color:var(--accent)">${totalKB.toFixed(2)} KB</span>
+  </div>`;
+  el.innerHTML = html;
+}
+
+function clearData(key, label) {
+  openModal(`
+    <div class="modal-title">🗑 Hapus ${escHtml(label)}?</div>
+    <div class="confirm-box">Data "${escHtml(label)}" akan dihapus permanen dari portal. Tindakan ini tidak bisa dibatalkan.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-lg btn-danger" onclick="confirmClearData('${key}','${escHtml(label)}')" style="flex:1">Ya, Hapus</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function confirmClearData(key, label) {
+  localStorage.removeItem(key);
+  saveLog('action', `Hapus data: ${label} (key: ${key})`);
+  closeModal();
+  renderStorage();
+  renderDashboard();
+  toast(`${label} dihapus ✅`, 'warn');
+}
+
+function resetAllData() {
+  openModal(`
+    <div class="modal-title">💥 Reset SEMUA Data?</div>
+    <div class="confirm-box">⚠️ <strong>Perhatian!</strong> Ini akan menghapus SELURUH data portal: tugas, pengumuman, absensi, nilai, dokumentasi, dll. Tidak bisa dibatalkan!</div>
+    <div class="form-group" style="margin-top:12px">
+      <label class="label">Ketik "RESET SEMUA" untuk konfirmasi:</label>
+      <input class="input" id="confirm-reset-input" placeholder="RESET SEMUA"/>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-lg btn-danger" onclick="confirmResetAll()" style="flex:1;background:rgba(239,71,111,0.4)">💥 Reset Total</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function confirmResetAll() {
+  const val = document.getElementById('confirm-reset-input')?.value.trim();
+  if (val !== 'RESET SEMUA') { toast('Ketik "RESET SEMUA" dengan benar', 'error'); return; }
+  Object.keys(PORTAL_KEYS).forEach(key => localStorage.removeItem(key));
+  localStorage.removeItem('mpi_auth');
+  saveLog('action', 'RESET TOTAL semua data portal');
+  closeModal();
+  renderStorage();
+  renderDashboard();
+  toast('Semua data direset 💥', 'warn');
+}
+
+function exportAllData() {
+  const exported = {};
+  for (const key of Object.keys(PORTAL_KEYS)) {
+    const val = localStorage.getItem(key);
+    if (val) { try { exported[key] = JSON.parse(val); } catch(e) { exported[key] = val; } }
+  }
+  exported._admin = adminState;
+  exported._exported = new Date().toISOString();
+  const blob = new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `portal-mpi-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  saveLog('action', 'Export seluruh data portal');
+  toast('Data berhasil diekspor 📤');
+}
+
+function exportUsers() {
+  const data = { anggota: adminState.anggota, exported: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `daftar-anggota-mpi-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('Daftar anggota diekspor 📤');
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      openModal(`
+        <div class="modal-title">📂 Import Data</div>
+        <div class="confirm-box">File: <strong>${escHtml(file.name)}</strong><br>Ini akan menimpa data yang ada. Lanjutkan?</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-lg btn-primary" onclick="confirmImport()" style="flex:1">Ya, Import</button>
+          <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+        </div>`);
+      window._importData = data;
+    } catch(e) { toast('File JSON tidak valid', 'error'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function confirmImport() {
+  const data = window._importData;
+  if (!data) return;
+  for (const [key] of Object.entries(PORTAL_KEYS)) {
+    if (data[key] !== undefined) localStorage.setItem(key, JSON.stringify(data[key]));
+  }
+  if (data._admin) { adminState = { ...adminState, ...data._admin }; saveAdminState(); }
+  saveLog('action', 'Import data dari file backup');
+  closeModal();
+  renderDashboard();
+  renderStorage();
+  toast('Data berhasil diimpor 📂');
+}
+
+// ═══════════════════════════════════════════════
+// SECURITY
+// ═══════════════════════════════════════════════
+let keyVisible = false;
+
+function renderSecurity() {
+  document.getElementById('current-key-display').textContent = keyVisible ? KATA_KUNCI_PORTAL : '•'.repeat(KATA_KUNCI_PORTAL.length);
+  document.getElementById('google-client-id').value = GOOGLE_CLIENT_ID_PORTAL;
+}
+
+function toggleKeyVis() {
+  keyVisible = !keyVisible;
+  document.getElementById('current-key-display').textContent = keyVisible ? KATA_KUNCI_PORTAL : '•'.repeat(KATA_KUNCI_PORTAL.length);
+  document.getElementById('key-vis-btn').textContent = keyVisible ? '🙈 Sembunyikan' : '👁 Tampilkan';
+}
+
+function changePassword() {
+  const newKey = document.getElementById('new-key-input').value.trim();
+  const confirmKey = document.getElementById('confirm-key-input').value.trim();
+  if (!newKey) { toast('Masukkan kata kunci baru', 'warn'); return; }
+  if (newKey !== confirmKey) { toast('Kata kunci tidak cocok', 'error'); return; }
+  if (newKey.length < 4) { toast('Kata kunci terlalu pendek (min 4 karakter)', 'warn'); return; }
+  KATA_KUNCI_PORTAL = newKey;
+  adminState.settings.kataKunci = newKey;
+  saveAdminState();
+  saveLog('action', 'Kata kunci kelas diubah');
+  document.getElementById('new-key-input').value = '';
+  document.getElementById('confirm-key-input').value = '';
+  renderSecurity();
+  toast('Kata kunci berhasil diubah 🔑');
+  openModal(`
+    <div class="modal-title">🔑 Kata Kunci Diubah</div>
+    <div style="text-align:center;padding:16px 0">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Kata kunci baru kelas:</div>
+      <div class="key-display" style="margin-bottom:16px">${escHtml(newKey)}</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6">⚠ Perubahan hanya tersimpan di admin panel.<br>Untuk apply ke portal, copy kata kunci ini dan update baris<br><code style="color:var(--accent)">const KATA_KUNCI = '...'</code><br>di file index.html</div>
+    </div>
+    <button class="btn btn-lg btn-primary" onclick="closeModal()">Mengerti</button>`);
+}
+
+function saveGoogleClientId() {
+  const cid = document.getElementById('google-client-id').value.trim();
+  if (!cid) { toast('Masukkan Client ID', 'warn'); return; }
+  GOOGLE_CLIENT_ID_PORTAL = cid;
+  adminState.settings.googleClientId = cid;
+  saveAdminState();
+  saveLog('action', 'Google Client ID diperbarui');
+  toast('Client ID disimpan 💾');
+}
+
+// ═══════════════════════════════════════════════
+// BROADCAST
+// ═══════════════════════════════════════════════
+function kirimPengumuman() {
+  const judul = document.getElementById('bc-judul').value.trim();
+  const isi = document.getElementById('bc-isi').value.trim();
+  const kelas = document.getElementById('bc-kelas').value;
+  const prioritas = document.getElementById('bc-prioritas').value;
+  if (!judul || !isi) { toast('Judul dan isi wajib diisi', 'warn'); return; }
+  const data = tryParse('mpi_pengumuman', []);
+  const icons = { normal:'📢', penting:'🔴', info:'🔵' };
+  data.unshift({
+    id: Date.now(), judul: (icons[prioritas] || '📢') + ' ' + judul,
+    teks: isi, kelas: kelas === 'all' ? '' : kelas,
+    tanggal: new Date().toISOString(), prioritas
+  });
+  localStorage.setItem('mpi_pengumuman', JSON.stringify(data));
+  saveLog('action', `Siaran pengumuman: ${judul}`);
+  document.getElementById('bc-judul').value = '';
+  document.getElementById('bc-isi').value = '';
+  document.getElementById('bc-preview').textContent = 'Preview akan muncul di sini...';
+  toast(`Pengumuman dikirim ke ${kelas === 'all' ? 'semua kelas' : kelas} ✅`);
+}
+
+// Live preview broadcast
+document.addEventListener('input', e => {
+  if (e.target.id === 'bc-judul' || e.target.id === 'bc-isi') {
+    const judul = document.getElementById('bc-judul')?.value;
+    const isi = document.getElementById('bc-isi')?.value;
+    const prev = document.getElementById('bc-preview');
+    if (prev) prev.innerHTML = `<strong>${escHtml(judul || 'Judul...')}</strong><br><br>${escHtml(isi || 'Isi...')}`;
+  }
+});
+
+// ═══════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════
+function saveAdminSettings() {
+  const name = document.getElementById('admin-name').value.trim();
+  const pw = document.getElementById('admin-pw').value.trim();
+  adminState.settings.adminName = name;
+  if (pw) adminState.settings.adminPw = btoa(pw);
+  saveAdminState();
+  saveLog('action', 'Pengaturan admin disimpan');
+  toast('Pengaturan disimpan 💾');
+}
+
+// ═══════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════
+function tryParse(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch(e) { return fallback; }
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s || '');
+  return d.innerHTML;
+}
+
+
+// ═══════════════════════════════════════════════
+// KIRIMAN ANGGOTA
+// ═══════════════════════════════════════════════
+let _kirimanFilter = 'semua';
+
+function filterKiriman(type) {
+  _kirimanFilter = type;
+  document.querySelectorAll('[id^="kfilter-"]').forEach(b => { b.style.borderColor = ''; b.style.color = ''; });
+  const btn = document.getElementById('kfilter-' + type);
+  if (btn) { btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; }
+  renderKiriman();
+}
+
+function renderKiriman() {
+  const tanya = tryParse('mpi_tanya', []);
+  const pengumuman = tryParse('mpi_pengumuman', []);
+  const tugas = tryParse('mpi_tugas', []);
+  const apresiasi = tryParse('mpi_apresiasi', []);
+
+  // Update badge
+  const total = tanya.length + pengumuman.length + tugas.length + apresiasi.length;
+  const badge = document.getElementById('badge-kiriman');
+  if (badge) badge.textContent = total;
+
+  let items = [];
+
+  if (_kirimanFilter === 'semua' || _kirimanFilter === 'tanya') {
+    tanya.forEach(t => items.push({
+      tipe: '💬 Tanya/Saran',
+      tipeKey: 'tanya',
+      warna: 'var(--purple)',
+      warnaLight: 'rgba(168,85,247,.1)',
+      judul: t.kategori || '💬 Pesan',
+      isi: t.isi,
+      pengirim: t._pengirim || '🕵️ Anonim',
+      email: t._email || '—',
+      tgl: t.tgl || '—',
+      jawaban: t.jawaban || '',
+      id: t.id
+    }));
+  }
+
+  if (_kirimanFilter === 'semua' || _kirimanFilter === 'pengumuman') {
+    pengumuman.forEach(p => items.push({
+      tipe: '📢 Pengumuman',
+      tipeKey: 'pengumuman',
+      warna: 'var(--gold)',
+      warnaLight: 'rgba(255,209,102,.08)',
+      judul: p.judul || '—',
+      isi: p.isi || p.teks || '',
+      pengirim: p._pengirim || p.oleh || '—',
+      email: p._email || '—',
+      tgl: p.tanggal ? new Date(p.tanggal).toLocaleDateString('id-ID') : '—',
+      id: p.id
+    }));
+  }
+
+  if (_kirimanFilter === 'semua' || _kirimanFilter === 'tugas') {
+    tugas.forEach(t => items.push({
+      tipe: '📝 Tugas',
+      tipeKey: 'tugas',
+      warna: 'var(--accent)',
+      warnaLight: 'rgba(0,212,255,.08)',
+      judul: t.judul || '—',
+      isi: t.deskripsi || '',
+      pengirim: t._pengirim || '—',
+      email: t._email || '—',
+      tgl: t.createdAt || '—',
+      extra: `Matkul: ${t.matkul || '—'} · Deadline: ${t.deadline ? new Date(t.deadline).toLocaleDateString('id-ID') : '—'}`,
+      id: t.id
+    }));
+  }
+
+  if (_kirimanFilter === 'semua' || _kirimanFilter === 'apresiasi') {
+    apresiasi.forEach(a => items.push({
+      tipe: '⭐ Apresiasi',
+      tipeKey: 'apresiasi',
+      warna: 'var(--green)',
+      warnaLight: 'rgba(6,214,160,.08)',
+      judul: a.kategori || '⭐',
+      isi: a.pesan || '',
+      pengirim: a.dari || '—',
+      email: '—',
+      tgl: a.tgl || '—',
+      extra: `Untuk: ${a.penerima || '—'}`,
+      id: a.id
+    }));
+  }
+
+  // Sort by date descending
+  items.sort((a, b) => b.id - a.id);
+
+  const el = document.getElementById('kiriman-list');
+  const countLbl = document.getElementById('kiriman-count-label');
+  if (countLbl) countLbl.textContent = '(' + items.length + ' item)';
+
+  if (items.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px;font-size:13px">Belum ada kiriman</div>';
+    return;
+  }
+
+  el.innerHTML = items.map(item => `
+    <div style="background:${item.warnaLight};border:1px solid ${item.warna}33;border-left:3px solid ${item.warna};border-radius:10px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${item.warna}22;color:${item.warna};border:1px solid ${item.warna}44;font-family:'JetBrains Mono',monospace;">${item.tipe}</span>
+          <strong style="font-size:13px;color:var(--text)">${escHtml(item.judul)}</strong>
+        </div>
+        <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${escHtml(item.tgl)}</span>
+      </div>
+
+      <!-- PENGIRIM INFO — hanya terlihat di admin -->
+      <div style="background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:16px;flex-shrink:0;">👤</span>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--accent)">${escHtml(item.pengirim)}</div>
+          <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${escHtml(item.email)}</div>
+        </div>
+        <div style="margin-left:auto;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);border-radius:6px;padding:3px 8px;font-size:9px;color:var(--accent);font-family:'JetBrains Mono',monospace;">ADMIN ONLY</div>
+      </div>
+
+      ${item.isi ? `<div style="font-size:13px;color:var(--text);line-height:1.55;margin-bottom:6px;">${escHtml(item.isi)}</div>` : ''}
+      ${item.extra ? `<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${escHtml(item.extra)}</div>` : ''}
+      ${item.jawaban ? `<div style="background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);border-radius:6px;padding:8px 10px;font-size:12px;color:var(--green);">💬 Jawaban: ${escHtml(item.jawaban)}</div>` : ''}
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// KAS KELAS
+// ═══════════════════════════════════════════════
+const KAS_KEY = 'mpi_kas_admin';
+let _kasFilter = 'semua';
+
+function getKasState() {
+  try {
+    const v = localStorage.getItem(KAS_KEY);
+    if (v) return JSON.parse(v);
+  } catch(e) {}
+  return { nominalIuran: 0, periode: '', pembayaran: [] };
+}
+
+function saveKasState(state) {
+  localStorage.setItem(KAS_KEY, JSON.stringify(state));
+  // Broadcast ke portal (mpi_kas) agar terbaca oleh halaman kas anggota
+  localStorage.setItem('mpi_kas', JSON.stringify(state));
+}
+
+function simpanSettingKas() {
+  const nominal = parseInt(document.getElementById('kas-nominal-iuran').value) || 0;
+  const periode = document.getElementById('kas-periode').value.trim();
+  const state = getKasState();
+  state.nominalIuran = nominal;
+  state.periode = periode;
+  saveKasState(state);
+  saveLog('action', `Setting kas: nominal Rp${nominal.toLocaleString('id')}, periode "${periode}"`);
+  toast('Setting kas disimpan 💾');
+  renderKas();
+}
+
+function renderKas() {
+  const state = getKasState();
+  const anggota = adminState.anggota;
+  const nominalIuran = state.nominalIuran || 0;
+  const pembayaran = state.pembayaran || [];
+
+  // Isi form setting
+  document.getElementById('kas-nominal-iuran').value = state.nominalIuran || '';
+  document.getElementById('kas-periode').value = state.periode || '';
+
+  // Hitung ringkasan per anggota
+  const rekapAnggota = anggota.map(a => {
+    const bayarList = pembayaran.filter(p => p.nama === a.nama);
+    const totalBayar = bayarList.reduce((s, p) => s + (p.jumlah || 0), 0);
+    const kurang = Math.max(0, nominalIuran - totalBayar);
+    const lebih = totalBayar > nominalIuran ? totalBayar - nominalIuran : 0;
+    return { ...a, totalBayar, kurang, lebih, bayarList,
+      status: totalBayar === 0 ? 'belum' : (kurang > 0 ? 'kurang' : 'sudah') };
+  });
+
+  // Stats
+  const totalMasuk = rekapAnggota.reduce((s, a) => s + a.totalBayar, 0);
+  const target = anggota.length * nominalIuran;
+  const sudahBayar = rekapAnggota.filter(a => a.status === 'sudah').length;
+  const belumBayar = rekapAnggota.filter(a => a.status !== 'sudah').length;
+  document.getElementById('kas-stat-masuk').textContent = 'Rp' + totalMasuk.toLocaleString('id');
+  document.getElementById('kas-stat-target').textContent = 'Rp' + target.toLocaleString('id');
+  document.getElementById('kas-stat-sudah').textContent = sudahBayar;
+  document.getElementById('kas-stat-belum').textContent = belumBayar;
+
+  // Badge sidebar
+  const badge = document.getElementById('badge-kas-belum');
+  if (badge) badge.textContent = belumBayar;
+
+  // Filter
+  const filtered = rekapAnggota.filter(a => {
+    if (_kasFilter === 'semua') return true;
+    return a.status === _kasFilter;
+  });
+
+  const colors = ['#00d4ff','#06d6a0','#ffd166','#ef476f','#a855f7','#ff9f43'];
+  const el = document.getElementById('kas-anggota-list');
+
+  if (filtered.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Tidak ada data</div>';
+  } else {
+    el.innerHTML = filtered.map((a, i) => {
+      const color = colors[anggota.findIndex(x => x.nama === a.nama) % colors.length];
+      const initials = a.nama.split(' ').map(w=>w[0]).slice(0,2).join('');
+      const statusColor = a.status === 'sudah' ? 'var(--green)' : a.status === 'kurang' ? 'var(--orange)' : 'var(--red)';
+      const statusLabel = a.status === 'sudah' ? '✅ Lunas' : a.status === 'kurang' ? '⚠️ Kurang Rp' + a.kurang.toLocaleString('id') : '❌ Belum Bayar';
+      const progPersen = nominalIuran > 0 ? Math.min(100, Math.round(a.totalBayar / nominalIuran * 100)) : (a.totalBayar > 0 ? 100 : 0);
+
+      return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+          <div style="width:30px;height:30px;border-radius:50%;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${escHtml(initials)}</div>
+          <div style="flex:1;min-width:120px">
+            <div style="font-size:13px;font-weight:600">${escHtml(a.nama)}</div>
+            <div style="font-size:10px;color:var(--muted)">${escHtml(a.jabatan)}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:12px;font-weight:700;color:${statusColor}">${statusLabel}</div>
+            <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">Bayar: Rp${a.totalBayar.toLocaleString('id')}</div>
+          </div>
+          <button class="btn btn-sm btn-success" onclick="openTambahPembayaran('${escHtml(a.nama)}')">+ Catat</button>
+          ${a.bayarList.length > 0 ? `<button class="btn btn-sm btn-ghost" onclick="toggleRiwayatKas('riwayat-${i}')">📋</button>` : ''}
+        </div>
+        <div style="background:var(--bg2);border-radius:4px;height:5px;overflow:hidden">
+          <div style="height:100%;width:${progPersen}%;background:${statusColor};border-radius:4px;transition:width .4s"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;text-align:right;font-family:'JetBrains Mono',monospace">${progPersen}% dari ${nominalIuran > 0 ? 'Rp' + nominalIuran.toLocaleString('id') : 'belum diset'}</div>
+        ${a.bayarList.length > 0 ? `<div id="riwayat-${i}" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+          ${a.bayarList.map((p,pi) => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;border-bottom:1px solid rgba(30,45,61,.4)">
+              <span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px">${escHtml(p.tanggal)}</span>
+              <span style="color:var(--green);font-weight:600">+Rp${(p.jumlah||0).toLocaleString('id')}</span>
+              ${p.keterangan ? `<span style="color:var(--muted);flex:1;text-align:center;font-size:11px">${escHtml(p.keterangan)}</span>` : '<span></span>'}
+              <button onclick="hapusTransaksiKasAnggota('${escHtml(a.nama)}',${pi})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:12px;padding:0 4px">🗑</button>
+            </div>`).join('')}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // Riwayat transaksi semua
+  const allTxn = [...pembayaran].sort((a,b) => b.id - a.id);
+  const txnEl = document.getElementById('kas-transaksi-list');
+  if (allTxn.length === 0) {
+    txnEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Belum ada transaksi</div>';
+  } else {
+    txnEl.innerHTML = allTxn.map((p, i) => `
+      <div class="log-entry">
+        <div class="log-time">${escHtml(p.tanggal || '—')}</div>
+        <div class="log-dot success"></div>
+        <div style="flex:1">
+          <div style="color:var(--text)">${escHtml(p.nama)} — <span style="color:var(--green);font-weight:700">+Rp${(p.jumlah||0).toLocaleString('id')}</span></div>
+          ${p.keterangan ? `<div style="color:var(--muted);font-size:11px">${escHtml(p.keterangan)}</div>` : ''}
+        </div>
+      </div>`).join('');
+  }
+}
+
+function toggleRiwayatKas(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function filterKas(type) {
+  _kasFilter = type;
+  document.querySelectorAll('[id^="kasfilter-"]').forEach(b => { b.style.borderColor = ''; b.style.color = ''; });
+  const btn = document.getElementById('kasfilter-' + type);
+  if (btn) { btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; }
+  renderKas();
+}
+
+function openTambahPembayaran(namaDefault) {
+  const anggota = adminState.anggota;
+  openModal(`
+    <div class="modal-title">💰 Catat Pembayaran Kas</div>
+    <div class="form-group">
+      <label class="label">Nama Anggota</label>
+      <select class="input" id="m-kas-nama">
+        ${anggota.map(a => `<option${namaDefault && a.nama === namaDefault ? ' selected' : ''}>${escHtml(a.nama)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="label">Jumlah Bayar (Rp)</label>
+      <input class="input" type="number" id="m-kas-jumlah" placeholder="Masukkan jumlah..." min="0"/>
+    </div>
+    <div class="form-group">
+      <label class="label">Tanggal</label>
+      <input class="input" type="date" id="m-kas-tgl" value="${new Date().toISOString().slice(0,10)}"/>
+    </div>
+    <div class="form-group">
+      <label class="label">Keterangan (opsional)</label>
+      <input class="input" id="m-kas-ket" placeholder="Contoh: Iuran April minggu ke-1..."/>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-lg btn-primary" onclick="simpanPembayaranKas()" style="flex:1">💾 Simpan</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function simpanPembayaranKas() {
+  const nama = document.getElementById('m-kas-nama').value;
+  const jumlah = parseInt(document.getElementById('m-kas-jumlah').value) || 0;
+  const tgl = document.getElementById('m-kas-tgl').value;
+  const ket = document.getElementById('m-kas-ket').value.trim();
+  if (!nama) { toast('Pilih nama anggota', 'warn'); return; }
+  if (jumlah <= 0) { toast('Masukkan jumlah bayar yang valid', 'warn'); return; }
+  const state = getKasState();
+  state.pembayaran.push({ id: Date.now(), nama, jumlah, tanggal: tgl, keterangan: ket });
+  saveKasState(state);
+  saveLog('action', `Catat kas: ${nama} bayar Rp${jumlah.toLocaleString('id')}`);
+  closeModal();
+  renderKas();
+  toast(`✅ ${nama} bayar Rp${jumlah.toLocaleString('id')} dicatat`);
+}
+
+function hapusTransaksiKasAnggota(nama, idx) {
+  const state = getKasState();
+  const bayarList = state.pembayaran.filter(p => p.nama === nama);
+  if (!bayarList[idx]) return;
+  const txnId = bayarList[idx].id;
+  state.pembayaran = state.pembayaran.filter(p => p.id !== txnId);
+  saveKasState(state);
+  saveLog('action', `Hapus transaksi kas: ${nama}`);
+  renderKas();
+  toast('Transaksi dihapus', 'warn');
+}
+
+function hapusSemuaTransaksiKas() {
+  openModal(`
+    <div class="modal-title">🗑 Hapus Semua Transaksi Kas?</div>
+    <div class="confirm-box">Semua catatan pembayaran akan dihapus permanen. Setting nominal iuran tetap tersimpan.</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-lg btn-danger" onclick="konfirmasiHapusSemuaKas()" style="flex:1">Ya, Hapus</button>
+      <button class="btn btn-lg btn-ghost" onclick="closeModal()" style="flex:1">Batal</button>
+    </div>`);
+}
+
+function konfirmasiHapusSemuaKas() {
+  const state = getKasState();
+  state.pembayaran = [];
+  saveKasState(state);
+  saveLog('action', 'Reset semua transaksi kas');
+  closeModal();
+  renderKas();
+  toast('Semua transaksi kas dihapus 💥', 'warn');
+}
+
+// ═══════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (!e.altKey) return;
+  const map = { d:'dashboard', u:'users', f:'features', s:'security', l:'logs' };
+  const page = map[e.key.toLowerCase()];
+  if (page) { e.preventDefault(); showPage(page); }
+  if (e.key === 'Escape') closeModal();
+});
+
+// ═══════════════════════════════════════════════
+// ADMIN LOGIN AUTHENTICATION
+// ═══════════════════════════════════════════════
+// Password admin — bisa diubah di sini
+const ADMIN_PASSWORD = 'AepAdmin2024!';
+const ADMIN_NAME = 'Aep Mulyana';
+
+function checkAdminLogin() {
+  const pw = document.getElementById('admin-login-pw').value;
+  const errEl = document.getElementById('admin-login-err');
+  if (pw === ADMIN_PASSWORD) {
+    document.getElementById('admin-login-overlay').style.display = 'none';
+    document.getElementById('app').style.display = 'grid';
+    sessionStorage.setItem('mpi_admin_auth', 'ok');
+    errEl.style.display = 'none';
+    // Update admin name in topbar
+    const badge = document.getElementById('topbar-admin-name');
+    if (badge) badge.textContent = ADMIN_NAME;
+    // Log masuk
+    saveLog('action', 'Admin ' + ADMIN_NAME + ' berhasil masuk');
+    initAdminPanel();
+  } else {
+    errEl.style.display = 'block';
+    document.getElementById('admin-login-pw').value = '';
+    document.getElementById('admin-login-pw').focus();
+    setTimeout(() => errEl.style.display = 'none', 3500);
+  }
+}
+
+function initAdminPanel() {
+  loadAdminState();
+  loadLogs();
+  updateLogBadge();
+  renderDashboard();
+  const tanya = tryParse('mpi_tanya', []);
+  const pengumuman = tryParse('mpi_pengumuman', []);
+  const tugas = tryParse('mpi_tugas', []);
+  const apresiasi = tryParse('mpi_apresiasi', []);
+  const badgeK = document.getElementById('badge-kiriman');
+  if (badgeK) badgeK.textContent = tanya.length + pengumuman.length + tugas.length + apresiasi.length;
+
+  // Update badge kas
+  const kasState = getKasState();
+  const nominalIuran = kasState.nominalIuran || 0;
+  const pembayaran = kasState.pembayaran || [];
+  const belumBayar = adminState.anggota.filter(a => {
+    const totalBayar = pembayaran.filter(p => p.nama === a.nama).reduce((s, p) => s + (p.jumlah || 0), 0);
+    return totalBayar < nominalIuran;
+  }).length;
+  const badgeKas = document.getElementById('badge-kas-belum');
+  if (badgeKas) badgeKas.textContent = belumBayar;
+
+  // Set state awal di history supaya Back pertama tidak langsung keluar
+  history.replaceState({ page: 'dashboard' }, '', '#dashboard');
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+// Cek apakah sudah login di sesi ini
+if (sessionStorage.getItem('mpi_admin_auth') === 'ok') {
+  document.getElementById('admin-login-overlay').style.display = 'none';
+  document.getElementById('app').style.display = 'grid';
+  initAdminPanel();
+} else {
+  // Tampilkan login overlay, fokus ke input
+  setTimeout(() => {
+    const inp = document.getElementById('admin-login-pw');
+    if (inp) inp.focus();
+  }, 300);
+}
+
+</script>
+</body>
+</html>
